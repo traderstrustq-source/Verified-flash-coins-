@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070a12">
+<title>Flash Coin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:#070a12; --bg2:#0d1220; --card:rgba(255,255,255,.045);
+  --line:rgba(255,255,255,.09); --txt:#eaf0ff; --dim:#8b96b4;
+  --acc:#00e0a4; --acc2:#3aa0ff; --warn:#ffb020; --bad:#ff4d6d;
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  background:
+    radial-gradient(900px 500px at 80% -10%,rgba(58,160,255,.16),transparent 60%),
+    radial-gradient(700px 500px at -10% 10%,rgba(0,224,164,.13),transparent 60%),
+    var(--bg);
+  color:var(--txt);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overscroll-behavior-y:contain;
+}
+#app{max-width:520px;margin:0 auto;padding:0 14px calc(96px + env(safe-area-inset-bottom));min-height:100%}
+.head{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
+  padding:14px 0 10px;background:linear-gradient(180deg,var(--bg) 60%,transparent);backdrop-filter:blur(6px)}
+.logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:18px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#04120d;font-weight:800;
+  box-shadow:0 6px 20px rgba(0,224,164,.35)}
+.brand{font-weight:750;letter-spacing:.2px}
+.brand small{display:block;font-weight:500;font-size:11px;color:var(--dim);letter-spacing:.4px}
+.spacer{flex:1}
+.pill{font-size:11px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);
+  color:var(--dim);background:var(--card);white-space:nowrap}
+.pill.ok{color:var(--acc);border-color:rgba(0,224,164,.35);background:rgba(0,224,164,.08)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;
+  margin-bottom:12px;backdrop-filter:blur(10px);animation:rise .35s ease both}
+.card.tight{padding:12px}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+h2{font-size:15px;margin:0 0 10px;letter-spacing:.2px}
+h2 .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top:2px}
+.muted{color:var(--dim);font-size:13px}
+.tiny{font-size:11.5px;color:var(--dim);line-height:1.45}
+
+.balance{position:relative;overflow:hidden;border-radius:22px;padding:20px;
+  background:linear-gradient(150deg,rgba(0,224,164,.16),rgba(58,160,255,.14) 55%,rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.12);margin-bottom:12px;animation:rise .35s ease both}
+.balance:after{content:"";position:absolute;inset:-40% -20% auto auto;width:220px;height:220px;
+  background:radial-gradient(circle,rgba(0,224,164,.35),transparent 70%);filter:blur(20px);animation:float 7s ease-in-out infinite}
+@keyframes float{50%{transform:translate(-18px,16px) scale(1.1)}}
+.balance .lbl{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:#b9c6e4}
+.balance .amt{font-size:34px;font-weight:800;letter-spacing:-.5px;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.qa{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 8px;text-align:center;
+  color:var(--txt);font-size:12px;font-weight:600;transition:transform .12s ease,background .2s;cursor:pointer}
+.qa:active{transform:scale(.94);background:rgba(255,255,255,.1)}
+.qa i{display:block;font-size:19px;font-style:normal;margin-bottom:4px}
+
+.btn{display:block;width:100%;padding:14px;border-radius:14px;border:0;cursor:pointer;
+  font:inherit;font-weight:700;color:#04120d;background:linear-gradient(135deg,var(--acc),#4fe0c0);
+  transition:transform .12s ease,filter .2s;position:relative;overflow:hidden}
+.btn:active{transform:scale(.975);filter:brightness(.94)}
+.btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--txt);font-weight:600}
+.btn.danger{background:linear-gradient(135deg,#ff4d6d,#ff7a90);color:#2a0209}
+.btn.sm{padding:10px 14px;width:auto;font-size:13px;border-radius:11px}
+.row{display:flex;gap:8px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+
+label{display:block;font-size:12px;color:var(--dim);margin:12px 0 6px;letter-spacing:.3px}
+input,select,textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);color:var(--txt);font:inherit;outline:none;transition:border-color .2s,background .2s}
+input:focus,select:focus,textarea:focus{border-color:rgba(0,224,164,.55);background:rgba(0,224,164,.05)}
+textarea{resize:vertical;min-height:88px}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;background-size:5px 5px;background-repeat:no-repeat}
+
+.item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.item:last-child{border-bottom:0}
+.ico{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-weight:800;font-size:12px;
+  background:rgba(255,255,255,.07);color:var(--acc);flex:0 0 auto;overflow:hidden}
+.ico img{width:100%;height:100%;object-fit:contain}
+.ico.big{width:42px;height:42px;border-radius:14px;font-size:14px}
+.item .mid{flex:1;min-width:0}
+.item .t{font-weight:650;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .s{font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .r{text-align:right;flex:0 0 auto}
+.item .r .v{font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums}
+
+.tag{font-size:10.5px;padding:3px 8px;border-radius:999px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.tag.p{background:rgba(255,176,32,.14);color:var(--warn)}
+.tag.a{background:rgba(0,224,164,.14);color:var(--acc)}
+.tag.r{background:rgba(255,77,109,.14);color:var(--bad)}
+
+.ticker{overflow:hidden;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);margin-bottom:12px}
+.ticker .track{display:flex;gap:26px;padding:10px 14px;white-space:nowrap;width:max-content;
+  animation:slide 26s linear infinite;font-size:12px;color:#b9c6e4}
+@keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker b{color:var(--acc)}
+.empty{text-align:center;padding:24px 10px;color:var(--dim);font-size:13px}
+.empty .e{font-size:28px;display:block;margin-bottom:8px;opacity:.7}
+
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,transparent,rgba(7,10,18,.92) 35%);backdrop-filter:blur(14px)}
+.tabbar .in{display:flex;gap:2px;background:rgba(255,255,255,.05);border:1px solid var(--line);
+  border-radius:18px;padding:5px;max-width:480px;width:100%}
+.tab{flex:1;border:0;background:transparent;color:var(--dim);font:inherit;font-size:10.5px;font-weight:650;
+  padding:8px 2px;border-radius:13px;cursor:pointer;transition:color .2s,background .25s,transform .12s}
+.tab i{display:block;font-size:17px;font-style:normal;margin-bottom:2px}
+.tab:active{transform:scale(.94)}
+.tab.on{color:#04120d;background:linear-gradient(135deg,var(--acc),#4fe0c0)}
+
+.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
+  background:rgba(3,6,12,.68);backdrop-filter:blur(4px);animation:fade .2s ease both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet .box{width:100%;max-width:520px;background:var(--bg2);border:1px solid var(--line);
+  border-radius:24px 24px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));
+  animation:up .32s cubic-bezier(.2,.9,.25,1) both;max-height:88vh;overflow:auto}
+@keyframes up{from{transform:translateY(60px);opacity:.6}to{transform:none;opacity:1}}
+.sheet .grab{width:44px;height:4px;border-radius:99px;background:rgba(255,255,255,.18);margin:0 auto 14px}
+
+.toast{position:fixed;left:50%;bottom:calc(110px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+  background:#111a2c;border:1px solid var(--line);color:var(--txt);padding:11px 16px;border-radius:13px;
+  font-size:13px;z-index:90;opacity:0;pointer-events:none;transition:.28s ease;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.ok{border-color:rgba(0,224,164,.4)}
+.toast.bad{border-color:rgba(255,77,109,.45)}
+
+.done{text-align:center;padding:6px 0 4px}
+.done svg{width:78px;height:78px;display:block;margin:0 auto 10px}
+.done .ring{fill:none;stroke:rgba(0,224,164,.22);stroke-width:4}
+.done .tick{fill:none;stroke:var(--acc);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:48;stroke-dashoffset:48;animation:draw .55s .15s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.done .big{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px;margin:2px 0}
+.done .cap{color:var(--dim);font-size:12.5px}
+
+.seg{display:flex;gap:6px;background:rgba(255,255,255,.05);padding:5px;border-radius:14px;margin-bottom:12px;overflow:auto}
+.seg button{flex:1;border:0;background:transparent;color:var(--dim);font:inherit;font-size:12.5px;font-weight:650;
+  padding:9px;border-radius:10px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:rgba(255,255,255,.1);color:var(--txt)}
+
+.chat{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding:6px 0}
+.msg{max-width:82%;padding:10px 13px;border-radius:15px;font-size:13.5px;line-height:1.45;animation:rise .25s ease both;word-break:break-word}
+.msg.u{align-self:flex-end;background:linear-gradient(135deg,rgba(0,224,164,.22),rgba(0,224,164,.12));
+  border:1px solid rgba(0,224,164,.28);border-bottom-right-radius:5px}
+.msg.a{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid var(--line);border-bottom-left-radius:5px}
+.msg .when{display:block;font-size:10px;color:var(--dim);margin-top:4px}
+
+.addr{display:flex;gap:8px;align-items:center;padding:12px;border-radius:13px;border:1px dashed rgba(0,224,164,.4);
+  background:rgba(0,224,164,.06);font-size:12.5px;word-break:break-all}
+.addr code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:1;font-size:12px;color:#c8ffe9}
+
+.k{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.k:last-child{border-bottom:0}
+.k span:first-child{color:var(--dim)}
+.k span:last-child{font-weight:650;text-align:right;word-break:break-word}
+
+.search{margin-bottom:10px}
+.warnbox{border:1px solid rgba(255,176,32,.35);background:rgba(255,176,32,.07);border-radius:13px;padding:11px 13px;
+  font-size:12px;color:#ffd490;margin-bottom:12px;line-height:1.5}
+.scroll{max-height:320px;overflow:auto;-webkit-overflow-scrolling:touch}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="head">
+    <div class="logo">&#9889;</div>
+    <div class="brand">Flash Coin<small>VERIFIED CRYPTO DESK</small></div>
+    <div class="spacer"></div>
+    <div class="pill ok" id="headPill">LIVE</div>
+  </div>
+  <main id="view"></main>
+</div>
+<div id="tabbar" class="tabbar" style="display:none"><div class="in" id="tabs"></div></div>
+<div id="modalRoot"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG - paste the two values you get from /admin in the bot
+   ============================================================ */
+const CONFIG = {
+  brand: "Flash Coin",
+  relayUrl: "",
+  adminKey: ""
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const now = () => Date.now();
+const money = n => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nfmt = n => Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 8 });
+const prc = n => (n == null || n === 0) ? "\u2014" : "$" + Number(n).toLocaleString("en-US", { maximumFractionDigits: n < 1 ? 6 : 2 });
+const ago = t => { const s = Math.floor((now() - t) / 1000); if (s < 60) return s + "s ago"; if (s < 3600) return Math.floor(s / 60) + "m ago"; if (s < 86400) return Math.floor(s / 3600) + "h ago"; return Math.floor(s / 86400) + "d ago"; };
+const code = () => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)]; return s; };
+
+const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+function tgInit() { if (!TG) return; try { TG.ready(); TG.expand(); if (TG.setHeaderColor) TG.setHeaderColor("#070a12"); if (TG.setBackgroundColor) TG.setBackgroundColor("#070a12"); } catch (e) { } }
+function haptic(kind) { try { if (!TG || !TG.HapticFeedback) return; if (kind === "ok") { TG.HapticFeedback.notificationOccurred("success"); } else { TG.HapticFeedback.impactOccurred("light"); } } catch (e) { } }
+
+let toastT;
+function toast(m, kind) {
+  const el = $("#toast");
+  el.textContent = m;
+  el.className = "toast on " + (kind || "");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => { el.className = "toast " + (kind || ""); }, 2600);
+}
+
+/* ---------- storage: every read and write goes through Store ---------- */
+const KEY = "flashcoin_v1";
+const FALLBACK_COINS = [
+  ["BTC","Bitcoin"],["ETH","Ethereum"],["USDT","Tether"],["USDC","USD Coin"],["BNB","BNB"],["SOL","Solana"],
+  ["XRP","XRP"],["TRX","TRON"],["DOGE","Dogecoin"],["ADA","Cardano"],["TON","Toncoin"],["LINK","Chainlink"],
+  ["AVAX","Avalanche"],["DOT","Polkadot"],["MATIC","Polygon"],["LTC","Litecoin"],["SHIB","Shiba Inu"],["DAI","Dai"],
+  ["ATOM","Cosmos"],["XLM","Stellar"],["ETC","Ethereum Classic"],["BCH","Bitcoin Cash"],["NEAR","NEAR Protocol"],
+  ["APT","Aptos"],["ARB","Arbitrum"],["OP","Optimism"],["SUI","Sui"],["SEI","Sei"],["INJ","Injective"],
+  ["TIA","Celestia"],["FIL","Filecoin"],["ICP","Internet Computer"],["HBAR","Hedera"],["VET","VeChain"],
+  ["ALGO","Algorand"],["EGLD","MultiversX"],["FTM","Fantom"],["MANA","Decentraland"],["SAND","The Sandbox"],
+  ["APE","ApeCoin"],["GRT","The Graph"],["RNDR","Render"],["AAVE","Aave"],["UNI","Uniswap"],["MKR","Maker"],
+  ["CRV","Curve DAO"],["LDO","Lido DAO"],["COMP","Compound"],["SNX","Synthetix"],["ENJ","Enjin Coin"],
+  ["CHZ","Chiliz"],["GALA","Gala"],["IMX","Immutable"],["FLOW","Flow"],["XTZ","Tezos"],["EOS","EOS"],
+  ["NEO","Neo"],["KAVA","Kava"],["ROSE","Oasis"],["ZEC","Zcash"],["DASH","Dash"],["XMR","Monero"],
+  ["WAVES","Waves"],["KSM","Kusama"],["THETA","Theta"],["AXS","Axie Infinity"],["GMT","STEPN"],["PEPE","Pepe"],
+  ["WIF","dogwifhat"],["BONK","Bonk"],["FLOKI","Floki"],["JUP","Jupiter"],["PYTH","Pyth"],["STRK","Starknet"],
+  ["WLD","Worldcoin"],["BLUR","Blur"],["DYDX","dYdX"],["CAKE","PancakeSwap"],["1INCH","1inch"],["ZIL","Zilliqa"],
+  ["IOTA","IOTA"],["ONE","Harmony"],["QTUM","Qtum"],["ONT","Ontology"],["BAT","Basic Attention"],["ZEN","Horizen"]
+];
+const WORLD_WALLETS = [
+  "Trust Wallet","MetaMask","Binance","Coinbase","Kraken","OKX","Bybit","KuCoin","Bitget","Gate.io","MEXC","HTX",
+  "Crypto.com","Bitstamp","Gemini","Bitfinex","Poloniex","Upbit","Bithumb","BitMart","LBank","CoinEx","Bit2Me",
+  "WazirX","CoinDCX","ZebPay","Giottus","Coinswitch","Rain","BitOasis","Yellow Card","Quidax","Luno","VALR",
+  "Phantom","Solflare","Backpack","Keplr","Leap","Petra","Martian","Yoroi","Nami","Eternl","Pera Wallet","Xumm",
+  "HashPack","Freighter","LOBSTR","Tonkeeper","MyTonWallet","Rabby","Rainbow","Argent","SafePal",
+  "Ledger","Trezor","Exodus","Atomic Wallet","Blockchain.com","BitPay","Wirex","Nexo","Revolut","Zengo",
+  "Coinbase Wallet","OKX Wallet","Bitget Wallet","Math Wallet","TokenPocket","imToken","CoolWallet","Ellipal"
+];
+
+let DB = null;
+function blank() {
+  return {
+    users: {}, session: null, adminSession: false,
+    coinsCache: null, customCoins: [],
+    methods: [], orders: [], deposits: [], withdrawals: [],
+    tickets: {}, settings: { adminPass: "", relayUrl: "", adminKey: "" }
+  };
+}
+const Store = {
+  get() {
+    if (DB) return DB;
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) { DB = JSON.parse(raw); DB = Object.assign(blank(), DB); return DB; }
+    } catch (e) { }
+    DB = blank();
+    return DB;
+  },
+  set() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) { toast("Storage full - export your data", "bad"); } }
+};
+const db = () => Store.get();
+const save = () => Store.set();
+
+/* ---------- auth ---------- */
+async function sha(text) {
+  const buf = new TextEncoder().encode(text);
+  const d = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(d)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+function me() { const d = db(); return d.session ? d.users[d.session] || null : null; }
+function tgUser() {
+  if (!TG || !TG.initDataUnsafe || !TG.initDataUnsafe.user) return null;
+  return TG.initDataUnsafe.user;
+}
+
+async function signup(email, pass, name) {
+  const d = db();
+  email = String(email || "").trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw "Enter a valid email address";
+  if (String(pass || "").length < 6) throw "Password needs at least 6 characters";
+  for (const id in d.users) if (d.users[id].email === email) throw "That email is already registered";
+  const salt = uid() + uid();
+  const hash = await sha(salt + ":" + pass);
+  const id = "u_" + uid();
+  const t = tgUser();
+  d.users[id] = {
+    id: id, email: email, name: String(name || "").trim() || email.split("@")[0], salt: salt, hash: hash,
+    balance: 0, holdings: {}, created: now(),
+    tgId: t ? String(t.id) : "", tgName: t ? ((t.first_name || "") + " " + (t.last_name || "")).trim() : ""
+  };
+  d.session = id;
+  save();
+  return d.users[id];
+}
+async function login(email, pass) {
+  const d = db();
+  email = String(email || "").trim().toLowerCase();
+  for (const id in d.users) {
+    const u = d.users[id];
+    if (u.email !== email) continue;
+    const hash = await sha(u.salt + ":" + pass);
+    if (hash !== u.hash) throw "Wrong password";
+    d.session = id;
+    const t = tgUser();
+    if (t) { u.tgId = String(t.id); u.tgName = ((t.first_name || "") + " " + (t.last_name || "")).trim(); }
+    save();
+    return u;
+  }
+  throw "No account with that email";
+}
+function logout() { db().session = null; save(); route = "home"; render(); toast("Signed out"); }
+function adminOn() { return db().adminSession === true; }
+
+/* ---------- prices ---------- */
+async function loadPrices(force) {
+  const d = db();
+  const c = d.coinsCache;
+  if (!force && c && now() - c.ts < 5 * 60 * 1000) return;
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1");
+    if (!r.ok) throw "feed " + r.status;
+    const j = await r.json();
+    if (!Array.isArray(j) || !j.length) throw "empty";
+    d.coinsCache = {
+      ts: now(),
+      list: j.map(x => ({ id: x.id, sym: String(x.symbol || "").toUpperCase(), name: x.name, price: x.current_price || 0, img: x.image || "" }))
+    };
+    save();
+  } catch (e) {
+    if (!d.coinsCache) {
+      d.coinsCache = { ts: now(), list: FALLBACK_COINS.map(c => ({ id: c[0].toLowerCase(), sym: c[0], name: c[1], price: null, img: "" })) };
+      save();
+    }
+  }
+}
+function coins() {
+  const d = db();
+  const live = (d.coinsCache && d.coinsCache.list) ? d.coinsCache.list : [];
+  const seen = {};
+  const out = [];
+  live.forEach(c => { seen[c.sym] = 1; out.push(c); });
+  (d.customCoins || []).forEach(c => { if (!seen[c.sym]) { out.push(c); seen[c.sym] = 1; } });
+  if (!out.length) FALLBACK_COINS.forEach(c => out.push({ id: c[0].toLowerCase(), sym: c[0], name: c[1], price: null, img: "" }));
+  return out;
+}
+function coinBy(sym) { const l = coins().filter(c => c.sym === sym); return l.length ? l[0] : null; }
+
+/* ---------- relay to the bot ---------- */
+function relayCfg() {
+  const s = db().settings;
+  return { url: CONFIG.relayUrl || s.relayUrl || "", key: CONFIG.adminKey || s.adminKey || "" };
+}
+async function relay(payload) {
+  const c = relayCfg();
+  if (!c.url || !c.key) return { ok: false, error: "relay not configured" };
+  try {
+    const body = Object.assign({ key: c.key }, payload);
+    const r = await fetch(c.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    return (j && typeof j === "object") ? j : { ok: true };
+  } catch (e) { return { ok: false, error: String(e) }; }
+}
+
+/* ---------- router ---------- */
+let route = "home";
+let marketQ = "";
+let authMode = "in";
+let adminTab = "deposits";
+let depSel = null;
+const TABS = [
+  ["home", "\uD83C\uDFE0", "Home"], ["market", "\uD83D\uDCC8", "Market"], ["deposit", "\u2B07\uFE0F", "Deposit"],
+  ["profile", "\uD83D\uDC64", "Profile"], ["support", "\uD83D\uDCAC", "Support"]
+];
+
+function render() {
+  const u = me();
+  const bar = $("#tabbar");
+  if (!u) {
+    bar.style.display = "none";
+    $("#view").innerHTML = viewAuth();
+    bindAuth();
+    return;
+  }
+  const tabs = adminOn() ? TABS.concat([["admin", "\uD83D\uDEE0", "Admin"]]) : TABS;
+  $("#tabs").innerHTML = tabs.map(t =>
+    '<button class="tab ' + (route === t[0] ? "on" : "") + '" data-tab="' + t[0] + '"><i>' + t[1] + '</i>' + t[2] + '</button>'
+  ).join("");
+  bar.style.display = "flex";
+  $$(".tab").forEach(b => { b.onclick = () => { haptic(); route = b.dataset.tab; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }; });
+
+  const map = { home: viewHome, market: viewMarket, deposit: viewDeposit, profile: viewProfile, support: viewSupport, admin: viewAdmin, withdraw: viewWithdraw };
+  $("#view").innerHTML = (map[route] || viewHome)();
+  const binders = { home: bindHome, market: bindMarket, deposit: bindDeposit, profile: bindProfile, support: bindSupport, admin: bindAdmin, withdraw: bindWithdraw };
+  if (binders[route]) binders[route]();
+  $("#headPill").textContent = adminOn() ? "ADMIN" : "LIVE";
+}
+
+/* ---------- auth view ---------- */
+function viewAuth() {
+  return '' +
+  '<div class="balance" style="text-align:center;padding:26px 20px">' +
+    '<div style="font-size:30px;margin-bottom:6px">\u26A1</div>' +
+    '<div style="font-size:22px;font-weight:800;letter-spacing:-.4px">' + esc(CONFIG.brand) + '</div>' +
+    '<div class="tiny" style="margin-top:6px">Buy verified crypto with a wallet you already own.<br>Wallet to wallet. No seed phrase, ever.</div>' +
+  '</div>' +
+  '<div class="card">' +
+    '<div class="seg">' +
+      '<button id="segIn" class="' + (authMode === "in" ? "on" : "") + '">Sign in</button>' +
+      '<button id="segUp" class="' + (authMode === "up" ? "on" : "") + '">Create account</button>' +
+    '</div>' +
+    (authMode === "up" ? '<label>Display name</label><input id="aName" placeholder="How we greet you">' : '') +
+    '<label>Email</label><input id="aEmail" type="email" inputmode="email" placeholder="you@email.com">' +
+    '<label>Password</label><input id="aPass" type="password" placeholder="At least 6 characters">' +
+    '<div style="height:16px"></div>' +
+    '<button class="btn" id="aGo">' + (authMode === "in" ? "Sign in" : "Create account") + '</button>' +
+    '<div class="tiny" style="margin-top:12px;text-align:center">Your password is hashed on this device. We never ask for a seed phrase or private key.</div>' +
+  '</div>' +
+  '<div class="card tight" style="text-align:center">' +
+    '<div class="tiny">Platform operator? <a href="#" id="adminLink" style="color:#00e0a4;text-decoration:none;font-weight:650">Open admin panel</a></div>' +
+  '</div>';
+}
+function bindAuth() {
+  $("#segIn").onclick = () => { authMode = "in"; render(); };
+  $("#segUp").onclick = () => { authMode = "up"; render(); };
+  $("#aGo").onclick = async () => {
+    const email = $("#aEmail").value, pass = $("#aPass").value;
+    const nm = $("#aName") ? $("#aName").value : "";
+    $("#aGo").disabled = true;
+    try {
+      if (authMode === "up") { await signup(email, pass, nm); } else { await login(email, pass); }
+      haptic("ok"); route = "home"; render(); toast("Welcome to " + CONFIG.brand, "ok");
+    } catch (e) { toast(String(e), "bad"); haptic(); }
+    const b = $("#aGo"); if (b) b.disabled = false;
+  };
+  $("#adminLink").onclick = ev => { ev.preventDefault(); askAdminPass(); };
+}
+function askAdminPass() {
+  if (!me()) { toast("Sign in first, then open admin", "bad"); return; }
+  const d = db();
+  if (!d.settings.adminPass) { setAdminPass(); return; }
+  sheet('<h2>Admin access</h2><label>Admin password</label><input id="ap" type="password" placeholder="Your admin password"><div style="height:14px"></div><button class="btn" id="apGo">Unlock</button>', () => {
+    $("#apGo").onclick = async () => {
+      const h = await sha("admin:" + $("#ap").value);
+      if (h === db().settings.adminPass) { db().adminSession = true; save(); closeSheet(); route = "admin"; render(); toast("Admin unlocked", "ok"); }
+      else { toast("Wrong admin password", "bad"); }
+    };
+  });
+}
+function setAdminPass() {
+  sheet('<h2>Create admin password</h2><div class="tiny">This opens the panel on this device. Keep it different from your login password.</div><label>New admin password</label><input id="np" type="password" placeholder="At least 8 characters"><label>Repeat</label><input id="np2" type="password" placeholder="Again"><div style="height:14px"></div><button class="btn" id="npGo">Save</button>', () => {
+    $("#npGo").onclick = async () => {
+      const a = $("#np").value, b = $("#np2").value;
+      if (a.length < 8) { toast("Use at least 8 characters", "bad"); return; }
+      if (a !== b) { toast("The two passwords differ", "bad"); return; }
+      db().settings.adminPass = await sha("admin:" + a);
+      db().adminSession = true; save(); closeSheet(); route = "admin"; render(); toast("Admin password set", "ok");
+    };
+  });
+}
+function adminOff() { db().adminSession = false; save(); route = "profile"; render(); toast("Admin locked"); }
+
+/* ---------- home ---------- */
+function ordersAll() { return db().orders.slice().sort((a, b) => b.ts - a.ts); }
+function viewHome() {
+  const u = me();
+  const list = ordersAll();
+  const hold = Object.keys(u.holdings || {});
+  const tick = list.slice(0, 8);
+  let feed = '<div class="empty"><span class="e">\uD83D\uDD53</span>No purchases yet. The feed fills the moment the first real order completes - nothing here is invented.</div>';
+  if (list.length) {
+    feed = '<div class="scroll">' + list.slice(0, 40).map(o =>
+      '<div class="item"><div class="ico">' + esc((o.coin || "?").slice(0, 3)) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(o.userName || "Member") + ' bought ' + nfmt(o.amount) + ' ' + esc(o.coin) + '</div>' +
+      '<div class="s">' + esc(o.method || "wallet") + ' \u00B7 ' + ago(o.ts) + ' \u00B7 <span style="color:#00e0a4">verified</span></div></div>' +
+      '<div class="r"><div class="v">' + money(o.total) + '</div></div></div>'
+    ).join("") + '</div>';
+  }
+  let holdings = '<div class="empty"><span class="e">\uD83D\uDCE6</span>You have not bought any coin yet.</div>';
+  if (hold.length) {
+    holdings = hold.map(sym => {
+      const c = coinBy(sym);
+      return '<div class="item"><div class="ico">' + esc(sym.slice(0, 4)) + '</div>' +
+        '<div class="mid"><div class="t">' + esc(c ? c.name : sym) + '</div><div class="s">' + esc(sym) + '</div></div>' +
+        '<div class="r"><div class="v">' + nfmt(u.holdings[sym]) + '</div><div class="s">' + prc(c ? c.price : null) + '</div></div></div>';
+    }).join("");
+  }
+  const ticker = tick.length
+    ? '<div class="ticker"><div class="track">' + tick.concat(tick).map(o =>
+        '<span><b>' + esc(o.userName || "Member") + '</b> bought ' + nfmt(o.amount) + ' ' + esc(o.coin) + ' \u00B7 ' + esc(o.method || "wallet") + '</span>'
+      ).join("") + '</div></div>'
+    : "";
+  return '' +
+  '<div class="balance"><div class="lbl">Deposit balance</div><div class="amt">' + money(u.balance) + '</div>' +
+    '<div class="tiny">Available to buy or withdraw</div></div>' +
+  '<div class="grid">' +
+    '<div class="qa" data-go="deposit"><i>\u2B07\uFE0F</i>Deposit</div>' +
+    '<div class="qa" data-go="market"><i>\uD83D\uDED2</i>Buy coin</div>' +
+    '<div class="qa" data-go="withdraw"><i>\u2B06\uFE0F</i>Withdraw</div>' +
+  '</div>' + ticker +
+  '<div class="card"><h2>Live purchase feed<span class="sub">Verified orders only - every line here is a real completed purchase</span></h2>' + feed + '</div>' +
+  '<div class="card"><h2>Your holdings<span class="sub">' + hold.length + ' token' + (hold.length === 1 ? "" : "s") + '</span></h2>' + holdings + '</div>';
+}
+function bindHome() {
+  $$("[data-go]").forEach(b => { b.onclick = () => { haptic(); route = b.dataset.go; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }; });
+}
+
+/* ---------- market ---------- */
+function viewMarket() {
+  const all = coins();
+  const q = marketQ.trim().toLowerCase();
+  const list = q ? all.filter(c => c.sym.toLowerCase().indexOf(q) > -1 || c.name.toLowerCase().indexOf(q) > -1) : all;
+  const rows = list.slice(0, 300).map(c =>
+    '<div class="item" data-buy="' + esc(c.sym) + '" style="cursor:pointer">' +
+      '<div class="ico">' + (c.img ? '<img src="' + esc(c.img) + '" alt="">' : esc(c.sym.slice(0, 3))) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(c.name) + '</div><div class="s">' + esc(c.sym) + '</div></div>' +
+      '<div class="r"><div class="v">' + prc(c.price) + '</div><div class="s">tap to buy</div></div>' +
+    '</div>'
+  ).join("");
+  return '<div class="search"><input id="mq" placeholder="Search 250+ coins and tokens" value="' + esc(marketQ) + '"></div>' +
+    '<div class="card tight"><h2 style="margin-bottom:8px">Catalogue<span class="sub">' + list.length + ' listed \u00B7 prices in USD, live where the feed is reachable</span></h2>' +
+    '<div class="scroll" style="max-height:60vh">' + rows + '</div></div>';
+}
+function bindMarket() {
+  const inp = $("#mq");
+  inp.oninput = () => { marketQ = inp.value; const v = inp.value; render(); const el = $("#mq"); if (el) { el.value = v; el.focus(); } };
+  $$("[data-buy]").forEach(r => { r.onclick = () => { haptic(); buySheet(r.dataset.buy); }; });
+}
+function payMethodOptions() {
+  const on = db().methods.filter(m => m.on !== false);
+  if (!on.length) return '<option value="Deposit balance">Deposit balance</option>';
+  return on.map(m => '<option value="' + esc(m.wallet + " \u00B7 " + m.network) + '">' + esc(m.wallet + " \u00B7 " + m.network) + '</option>').join("");
+}
+function buySheet(sym) {
+  const c = coinBy(sym) || { sym: sym, name: sym, price: null };
+  sheet('<h2>Buy ' + esc(c.name) + '<span class="sub">' + esc(c.sym) + ' \u00B7 ' + prc(c.price) + '</span></h2>' +
+    (c.price ? '' : '<div class="warnbox">No live price for this coin, so buying stays closed until one is known.</div>') +
+    '<label>Amount in ' + esc(c.sym) + '</label><input id="bAmt" inputmode="decimal" placeholder="0.00">' +
+    '<label>Payment method</label><select id="bMethod">' + payMethodOptions() + '</select>' +
+    '<div class="k" style="margin-top:12px"><span>Cost</span><span id="bCost">$0.00</span></div>' +
+    '<div class="k"><span>Your balance</span><span>' + money(me().balance) + '</span></div>' +
+    '<div style="height:16px"></div>' +
+    '<button class="btn" id="bGo"' + (c.price ? '' : ' disabled') + '>Confirm purchase</button>' +
+    '<div class="tiny" style="margin-top:10px;text-align:center">Verified purchase - your balance is debited and the tokens are added to your holdings.</div>', () => {
+    const amt = $("#bAmt"), cost = $("#bCost");
+    const upd = () => { cost.textContent = money((parseFloat(amt.value) || 0) * (c.price || 0)); };
+    amt.oninput = upd;
+    $("#bGo").onclick = () => {
+      const q = parseFloat(amt.value) || 0;
+      const total = q * (c.price || 0);
+      const u = me();
+      if (q <= 0) { toast("Enter an amount", "bad"); return; }
+      if (total > u.balance) { toast("Balance too low - deposit first", "bad"); return; }
+      u.balance = +(u.balance - total).toFixed(8);
+      u.holdings[c.sym] = +((u.holdings[c.sym] || 0) + q).toFixed(8);
+      const o = {
+        id: "ORD-" + code(), userId: u.id, userName: u.name, coin: c.sym, coinName: c.name,
+        amount: q, unit: c.price, total: +total.toFixed(8), method: $("#bMethod").value,
+        status: "verified", ts: now()
+      };
+      db().orders.push(o); save();
+      haptic("ok");
+      closeSheet();
+      setTimeout(() => { doneSheet("Purchase complete", nfmt(q) + " " + c.sym, money(total) + " \u00B7 added to your holdings", "ORD " + o.id); }, 180);
+    };
+  });
+}
+
+/* ---------- deposit ---------- */
+function viewDeposit() {
+  const on = db().methods.filter(m => m.on !== false);
+  const u = me();
+  const cur = on.filter(m => m.id === depSel).length ? on.filter(m => m.id === depSel)[0] : (on.length ? on[0] : null);
+  const mine = db().deposits.filter(d => d.userId === u.id).sort((a, b) => b.ts - a.ts);
+  let form = '<div class="empty"><span class="e">\uD83C\uDFE6</span>The operator has not opened a deposit method yet. Check back shortly.</div>';
+  if (cur) {
+    form = '<label>Choose a method</label><select id="dMethod">' +
+      on.map(m => '<option value="' + esc(m.id) + '"' + (m.id === cur.id ? ' selected' : '') + '>' + esc(m.wallet + " \u00B7 " + m.network + " \u00B7 " + m.coin) + '</option>').join("") +
+      '</select>' +
+      '<label>Send exactly to this address</label>' +
+      '<div class="addr"><code id="dAddr">' + esc(cur.address) + '</code><button class="btn sm ghost" id="dCopy">Copy</button></div>' +
+      (cur.note ? '<div class="tiny" style="margin-top:8px">' + esc(cur.note) + '</div>' : '') +
+      '<label>Amount you sent</label><input id="dAmt" inputmode="decimal" placeholder="e.g. 250.00">' +
+      '<label>Transaction hash / ID</label><input id="dTx" placeholder="Paste the txid from your wallet">' +
+      '<div style="height:16px"></div><button class="btn" id="dGo">Submit deposit for review</button>' +
+      '<div class="tiny" style="margin-top:10px">Nothing is credited until the operator confirms your transaction. You will see it in this list.</div>';
+  }
+  const claims = mine.length ? mine.map(d =>
+    '<div class="item"><div class="ico">' + (d.status === "approved" ? "\u2713" : d.status === "rejected" ? "\u2715" : "\u2026") + '</div>' +
+    '<div class="mid"><div class="t">' + esc(d.method) + '</div><div class="s">' + money(d.amount) + ' \u00B7 ' + ago(d.ts) + ' \u00B7 ' + esc(String(d.txid || "").slice(0, 14)) + '</div></div>' +
+    '<div class="r"><span class="tag ' + (d.status === "approved" ? "a" : d.status === "rejected" ? "r" : "p") + '">' + esc(d.status) + '</span></div></div>'
+  ).join("") : '<div class="empty">No claims yet.</div>';
+  return '<div class="card"><h2>Deposit funds<span class="sub">Send to an address set by the operator, then submit the transaction</span></h2>' + form + '</div>' +
+    '<div class="card"><h2>Your deposit claims</h2>' + claims + '</div>';
+}
+function bindDeposit() {
+  const sel = $("#dMethod");
+  if (!sel) return;
+  const on = db().methods.filter(m => m.on !== false);
+  sel.onchange = () => { depSel = sel.value; render(); };
+  $("#dCopy").onclick = async () => {
+    const t = $("#dAddr").textContent;
+    try { await navigator.clipboard.writeText(t); toast("Address copied", "ok"); haptic("ok"); }
+    catch (e) { toast("Long-press the address to copy", "bad"); }
+  };
+  $("#dGo").onclick = () => {
+    const m = on.filter(x => x.id === sel.value).length ? on.filter(x => x.id === sel.value)[0] : null;
+    const amt = parseFloat($("#dAmt").value) || 0;
+    const tx = $("#dTx").value.trim();
+    if (!m) { toast("Pick a method", "bad"); return; }
+    if (amt <= 0) { toast("Enter the amount you sent", "bad"); return; }
+    if (tx.length < 6) { toast("Paste the transaction id", "bad"); return; }
+    const u = me();
+    db().deposits.push({ id: "DEP-" + code(), userId: u.id, userName: u.name, method: m.wallet + " \u00B7 " + m.network, amount: amt, txid: tx, status: "pending", ts: now() });
+    save();
+    relay({ action: "notify_admin", text: "\uD83D\uDCB0 Deposit claim\n" + u.name + " (" + (u.tgId || u.email) + ")\n" + m.wallet + " \u00B7 " + m.network + "\nAmount: " + amt + "\nTx: " + tx });
+    haptic("ok");
+    doneSheet("Claim submitted", money(amt), "Pending operator confirmation", "DEP \u00B7 " + m.wallet);
+    setTimeout(() => { route = "deposit"; render(); }, 1500);
+  };
+}
+
+/* ---------- withdraw ---------- */
+function viewWithdraw() {
+  const u = me();
+  const mine = db().withdrawals.filter(w => w.userId === u.id).sort((a, b) => b.ts - a.ts);
+  const nets = ["TRC-20", "ERC-20", "BEP-20", "Bitcoin", "Solana", "TON", "Polygon", "Avalanche", "Arbitrum", "Base", "Other"];
+  const list = mine.length ? mine.map(w =>
+    '<div class="item"><div class="ico">' + (w.status === "paid" ? "\u2713" : w.status === "rejected" ? "\u2715" : "\u2026") + '</div>' +
+    '<div class="mid"><div class="t">' + money(w.amount) + ' \u00B7 ' + esc(w.network) + '</div><div class="s">' + esc(String(w.address || "").slice(0, 18)) + '\u2026 \u00B7 ' + ago(w.ts) + '</div></div>' +
+    '<div class="r"><span class="tag ' + (w.status === "paid" ? "a" : w.status === "rejected" ? "r" : "p") + '">' + esc(w.status) + '</span></div></div>'
+  ).join("") : '<div class="empty">Nothing requested yet.</div>';
+  return '<div class="card"><h2>Withdraw tokens<span class="sub">Balance ' + money(u.balance) + '</span></h2>' +
+    '<div class="warnbox">Enter the receiving address only. Never send anyone a seed phrase or private key - no support agent needs it, and this app will never ask.</div>' +
+    '<label>Network</label><select id="wNet">' + nets.map(n => '<option>' + n + '</option>').join("") + '</select>' +
+    '<label>Amount (USD)</label><input id="wAmt" inputmode="decimal" placeholder="e.g. 100.00">' +
+    '<label>Your receiving address</label><input id="wAddr" placeholder="Wallet address">' +
+    '<div style="height:16px"></div><button class="btn" id="wGo">Request withdrawal</button></div>' +
+    '<div class="card"><h2>Your withdrawals</h2>' + list + '</div>';
+}
+function bindWithdraw() {
+  $("#wGo").onclick = () => {
+    const u = me();
+    const amt = parseFloat($("#wAmt").value) || 0;
+    const addr = $("#wAddr").value.trim();
+    const net = $("#wNet").value;
+    if (amt <= 0) { toast("Enter an amount", "bad"); return; }
+    if (amt > u.balance) { toast("Balance too low", "bad"); return; }
+    if (addr.length < 8) { toast("Enter a valid address", "bad"); return; }
+    u.balance = +(u.balance - amt).toFixed(8);
+    const w = { id: "WD-" + code(), userId: u.id, userName: u.name, network: net, address: addr, amount: amt, status: "pending", ts: now() };
+    db().withdrawals.push(w); save();
+    relay({ action: "notify_admin", text: "\u2B06\uFE0F Withdrawal request\n" + u.name + " (" + (u.tgId || u.email) + ")\n" + net + " \u00B7 " + amt + "\nTo: " + addr });
+    haptic("ok");
+    doneSheet("Withdrawal requested", money(amt), "Held from your balance until the operator sends it", "WD " + w.id);
+    setTimeout(() => { route = "withdraw"; render(); }, 1500);
+  };
+}
+
+/* ---------- profile ---------- */
+function viewProfile() {
+  const u = me();
+  const orders = ordersAll().filter(o => o.userId === u.id);
+  const hold = Object.keys(u.holdings || {});
+  const holdings = hold.length ? hold.map(sym => {
+    const c = coinBy(sym);
+    return '<div class="item"><div class="ico">' + esc(sym.slice(0, 4)) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(c ? c.name : sym) + '</div><div class="s">' + prc(c ? c.price : null) + ' now</div></div>' +
+      '<div class="r"><div class="v">' + nfmt(u.holdings[sym]) + '</div><div class="s">' + esc(sym) + '</div></div></div>';
+  }).join("") : '<div class="empty">No tokens yet.</div>';
+  const ords = orders.length ? orders.map(o =>
+    '<div class="item"><div class="ico">' + esc(o.coin.slice(0, 3)) + '</div>' +
+    '<div class="mid"><div class="t">' + nfmt(o.amount) + ' ' + esc(o.coin) + '</div><div class="s">' + esc(o.id) + ' \u00B7 ' + ago(o.ts) + '</div></div>' +
+    '<div class="r"><div class="v">' + money(o.total) + '</div><span class="tag a" style="margin-top:3px;display:inline-block">verified</span></div></div>'
+  ).join("") : '<div class="empty">No orders yet.</div>';
+  return '<div class="card"><div class="row"><div class="ico big">' + esc((u.name || "U").slice(0, 2).toUpperCase()) + '</div>' +
+    '<div style="flex:1"><div style="font-weight:750;font-size:16px">' + esc(u.name) + '</div><div class="tiny">' + esc(u.email) + '</div></div>' +
+    '<span class="tag a">verified</span></div><div style="height:10px"></div>' +
+    '<div class="k"><span>Deposit balance</span><span>' + money(u.balance) + '</span></div>' +
+    '<div class="k"><span>Tokens held</span><span>' + hold.length + '</span></div>' +
+    '<div class="k"><span>Total orders</span><span>' + orders.length + '</span></div>' +
+    '<div class="k"><span>Telegram ID</span><span>' + (u.tgId ? esc(u.tgId) : "not linked") + '</span></div>' +
+    '<div class="k"><span>Member since</span><span>' + new Date(u.created).toLocaleDateString() + '</span></div></div>' +
+    '<div class="card"><h2>Purchased tokens</h2>' + holdings + '</div>' +
+    '<div class="card"><h2>Order history</h2>' + ords + '</div>' +
+    '<div class="card"><button class="btn ghost" id="pAdmin">' + (adminOn() ? "Open admin panel" : "Operator panel") + '</button>' +
+    '<div style="height:8px"></div><button class="btn danger" id="pOut">Log out</button></div>';
+}
+function bindProfile() {
+  $("#pOut").onclick = () => logout();
+  $("#pAdmin").onclick = () => { if (adminOn()) { route = "admin"; render(); } else { askAdminPass(); } };
+}
+
+/* ---------- support ---------- */
+function viewSupport() {
+  const u = me();
+  const t = db().tickets[u.id] || [];
+  const msgs = t.length ? t.map(m =>
+    '<div class="msg ' + (m.from === "user" ? "u" : "a") + '">' + esc(m.text) + '<span class="when">' + ago(m.ts) + '</span></div>'
+  ).join("") : '<div class="empty"><span class="e">\uD83D\uDCAC</span>No messages yet. Ask anything about your order or deposit.</div>';
+  return '<div class="card"><h2>Support<span class="sub">Messages reach the operator on Telegram. Replies arrive here and in your bot chat.</span></h2>' +
+    '<div class="chat" id="chatBox">' + msgs + '</div>' +
+    '<label>Your message</label><textarea id="sText" placeholder="Type your message..."></textarea>' +
+    '<div style="height:12px"></div><button class="btn" id="sGo">Send</button></div>';
+}
+function bindSupport() {
+  const box = $("#chatBox");
+  if (box) box.scrollTop = box.scrollHeight;
+  $("#sGo").onclick = async () => {
+    const v = $("#sText").value.trim();
+    if (!v) { toast("Write a message first", "bad"); return; }
+    const u = me();
+    const d = db();
+    d.tickets[u.id] = d.tickets[u.id] || [];
+    d.tickets[u.id].push({ from: "user", text: v, ts: now() });
+    save();
+    const r = await relay({ action: "notify_admin", text: "\uD83D\uDCAC Support \u00B7 " + u.name + " (" + (u.tgId || u.email) + ")\n\n" + v });
+    if (!r.ok) { toast("Saved here. Relay not connected yet.", "bad"); } else { toast("Sent to support", "ok"); }
+    render();
+  };
+}
+
+/* ---------- admin ---------- */
+function viewAdmin() {
+  if (!adminOn()) return '<div class="card"><h2>Locked</h2><button class="btn" id="unlock">Unlock</button></div>';
+  const d = db();
+  const pend = d.deposits.filter(x => x.status === "pending").length;
+  const wpend = d.withdrawals.filter(x => x.status === "pending").length;
+  const tabs = [["deposits", "Deposits " + pend], ["withdrawals", "Payouts " + wpend], ["users", "Users"], ["methods", "Methods"], ["coins", "Coins"], ["messages", "Messages"], ["broadcast", "Broadcast"], ["settings", "Settings"]];
+  return '<div class="seg">' + tabs.map(t => '<button data-at="' + t[0] + '" class="' + (adminTab === t[0] ? "on" : "") + '">' + esc(t[1]) + '</button>').join("") + '</div>' +
+    '<div id="adminPane">' + adminPane() + '</div>';
+}
+function adminPane() {
+  const d = db();
+  if (adminTab === "deposits") {
+    const list = d.deposits.slice().sort((a, b) => b.ts - a.ts);
+    const rows = list.length ? list.map(x =>
+      '<div class="item"><div class="ico">' + (x.status === "approved" ? "\u2713" : x.status === "rejected" ? "\u2715" : "\u2026") + '</div>' +
+      '<div class="mid"><div class="t">' + esc(x.userName) + ' \u00B7 ' + money(x.amount) + '</div><div class="s">' + esc(x.method) + ' \u00B7 ' + esc(x.txid) + '</div></div>' +
+      '<div class="r">' + (x.status === "pending"
+        ? '<button class="btn sm" data-ok="' + esc(x.id) + '">Approve</button> <button class="btn sm ghost" data-no="' + esc(x.id) + '">Reject</button>'
+        : '<span class="tag ' + (x.status === "approved" ? "a" : "r") + '">' + esc(x.status) + '</span>') + '</div></div>'
+    ).join("") : '<div class="empty">No claims.</div>';
+    return '<div class="card"><h2>Deposit claims<span class="sub">Confirm only after the transaction is visible on-chain</span></h2>' + rows + '</div>';
+  }
+  if (adminTab === "withdrawals") {
+    const list = d.withdrawals.slice().sort((a, b) => b.ts - a.ts);
+    const rows = list.length ? list.map(x =>
+      '<div class="item"><div class="ico">\u2B06\uFE0F</div>' +
+      '<div class="mid"><div class="t">' + esc(x.userName) + ' \u00B7 ' + money(x.amount) + '</div><div class="s">' + esc(x.network) + ' \u00B7 ' + esc(x.address) + '</div></div>' +
+      '<div class="r">' + (x.status === "pending"
+        ? '<button class="btn sm" data-pay="' + esc(x.id) + '">Paid</button> <button class="btn sm ghost" data-wrej="' + esc(x.id) + '">Reject</button>'
+        : '<span class="tag ' + (x.status === "paid" ? "a" : "r") + '">' + esc(x.status) + '</span>') + '</div></div>'
+    ).join("") : '<div class="empty">No requests.</div>';
+    return '<div class="card"><h2>Withdrawal requests<span class="sub">Balance is already held; rejecting refunds it</span></h2>' + rows + '</div>';
+  }
+  if (adminTab === "users") {
+    const us = Object.keys(d.users).map(k => d.users[k]);
+    const rows = us.length ? us.map(u =>
+      '<div class="item"><div class="ico">' + esc((u.name || "U").slice(0, 2).toUpperCase()) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(u.name) + '</div><div class="s">' + esc(u.email) + ' \u00B7 ' + (u.tgId ? "TG " + esc(u.tgId) : "no link") + '</div></div>' +
+      '<div class="r"><div class="v">' + money(u.balance) + '</div><button class="btn sm ghost" data-credit="' + esc(u.id) + '" style="margin-top:4px">Edit</button></div></div>'
+    ).join("") : '<div class="empty">No users yet.</div>';
+    return '<div class="card"><h2>Users<span class="sub">' + us.length + ' registered</span></h2>' + rows + '</div>';
+  }
+  if (adminTab === "methods") {
+    const rows = d.methods.length ? d.methods.map(m =>
+      '<div class="item"><div class="ico">' + esc((m.wallet || "?").slice(0, 2).toUpperCase()) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(m.wallet) + ' \u00B7 ' + esc(m.coin) + '</div><div class="s">' + esc(m.network) + ' \u00B7 ' + esc(String(m.address || "").slice(0, 20)) + '\u2026</div></div>' +
+      '<div class="r"><button class="btn sm ghost" data-mtoggle="' + esc(m.id) + '">' + (m.on === false ? "Off" : "On") + '</button>' +
+      '<button class="btn sm ghost" data-mdel="' + esc(m.id) + '" style="margin-top:4px">Del</button></div></div>'
+    ).join("") : '<div class="empty">No methods yet.</div>';
+    const nets = ["TRC-20", "ERC-20", "BEP-20", "Bitcoin", "Solana", "TON", "Polygon", "Avalanche", "Arbitrum", "Base", "Other"];
+    return '<div class="card"><h2>Deposit methods<span class="sub">' + d.methods.length + ' configured - add as many as you need</span></h2>' + rows + '</div>' +
+      '<div class="card"><h2>Add a method</h2>' +
+      '<label>Wallet or exchange</label><input id="mWallet" list="wallets" placeholder="Trust Wallet, Binance, Kraken...">' +
+      '<datalist id="wallets">' + WORLD_WALLETS.map(w => '<option value="' + esc(w) + '">').join("") + '</datalist>' +
+      '<label>Coin</label><input id="mCoin" placeholder="USDT">' +
+      '<label>Network</label><select id="mNet">' + nets.map(n => '<option>' + n + '</option>').join("") + '</select>' +
+      '<label>Your receiving address</label><input id="mAddr" placeholder="The address users send to">' +
+      '<label>Note shown to users (optional)</label><input id="mNote" placeholder="e.g. TRC-20 only, memo not needed">' +
+      '<div style="height:14px"></div><button class="btn" id="mAdd">Add method</button></div>';
+  }
+  if (adminTab === "coins") {
+    const rows = (d.customCoins || []).length ? (d.customCoins || []).map(c =>
+      '<div class="item"><div class="ico">' + esc(c.sym.slice(0, 3)) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(c.name) + '</div><div class="s">' + esc(c.sym) + ' \u00B7 ' + prc(c.price) + '</div></div>' +
+      '<div class="r"><button class="btn sm ghost" data-cdel="' + esc(c.sym) + '">Del</button></div></div>'
+    ).join("") : '<div class="empty">No custom coins.</div>';
+    return '<div class="card"><h2>Coin catalogue<span class="sub">' + coins().length + ' listed from the live feed</span></h2>' +
+      '<div class="tiny">The catalogue follows the live market feed. Add a coin below to list one that is missing.</div></div>' +
+      '<div class="card"><h2>Add a coin</h2>' +
+      '<label>Symbol</label><input id="cSym" placeholder="MNT">' +
+      '<label>Name</label><input id="cName" placeholder="Mantle">' +
+      '<label>Price in USD (empty follows the feed)</label><input id="cPrice" inputmode="decimal" placeholder="0.00">' +
+      '<div style="height:14px"></div><button class="btn" id="cAdd">Add coin</button></div>' +
+      '<div class="card"><h2>Your coins</h2>' + rows + '</div>';
+  }
+  if (adminTab === "messages") {
+    const ids = Object.keys(d.tickets);
+    const rows = ids.length ? ids.map(id => {
+      const u = d.users[id] || { name: id };
+      const t = d.tickets[id];
+      const last = t[t.length - 1];
+      return '<div class="item"><div class="ico">' + esc((u.name || "U").slice(0, 2).toUpperCase()) + '</div>' +
+        '<div class="mid"><div class="t">' + esc(u.name) + '</div><div class="s">' + esc(String(last.text).slice(0, 40)) + '</div></div>' +
+        '<div class="r"><button class="btn sm ghost" data-reply="' + esc(id) + '">Reply</button></div></div>';
+    }).join("") : '<div class="empty">No conversations.</div>';
+    return '<div class="card"><h2>Inbox<span class="sub">' + ids.length + ' conversation' + (ids.length === 1 ? "" : "s") + '</span></h2>' + rows + '</div>';
+  }
+  if (adminTab === "broadcast") {
+    return '<div class="card"><h2>Broadcast<span class="sub">Goes to every user of the bot through Telegram</span></h2>' +
+      '<div class="tiny" style="margin-bottom:10px">Delivery is handled by the bot relay. If it is not connected you get an error, never a false success.</div>' +
+      '<label>Message</label><textarea id="bcText" placeholder="Announcement text..."></textarea>' +
+      '<div style="height:14px"></div><button class="btn" id="bcGo">Send to everyone</button></div>' +
+      '<div class="card"><h2>Message one user</h2>' +
+      '<label>Telegram ID or email</label><input id="dmTo" placeholder="123456789">' +
+      '<label>Message</label><textarea id="dmText" placeholder="Hello..."></textarea>' +
+      '<div style="height:14px"></div><button class="btn ghost" id="dmGo">Send</button></div>';
+  }
+  return '<div class="card"><h2>Settings</h2>' +
+    '<label>Bot relay URL</label><input id="stUrl" value="' + esc(d.settings.relayUrl || CONFIG.relayUrl) + '" placeholder="Paste from /admin in the bot">' +
+    '<label>Admin relay key</label><input id="stKey" value="' + esc(d.settings.adminKey || CONFIG.adminKey) + '" placeholder="32-character key from /admin">' +
+    '<div style="height:14px"></div><button class="btn" id="stSave">Save relay</button>' +
+    '<div style="height:8px"></div><button class="btn ghost" id="stTest">Test relay</button>' +
+    '<div style="height:16px"></div><button class="btn ghost" id="stPass">Change admin password</button>' +
+    '<div style="height:8px"></div><button class="btn ghost" id="stExport">Export data (JSON)</button>' +
+    '<div style="height:8px"></div><button class="btn danger" id="stLock">Lock admin</button></div>';
+}
+function bindAdmin() {
+  const un = $("#unlock");
+  if (un) un.onclick = () => askAdminPass();
+  $$("[data-at]").forEach(b => { b.onclick = () => { adminTab = b.dataset.at; render(); }; });
+
+  $$("[data-ok]").forEach(b => {
+    b.onclick = () => {
+      const d = db();
+      const x = d.deposits.filter(y => y.id === b.dataset.ok)[0];
+      if (!x) return;
+      x.status = "approved"; x.confirmedAt = now();
+      const u = d.users[x.userId];
+      if (u) u.balance = +(u.balance + Number(x.amount)).toFixed(8);
+      save(); toast("Deposit credited", "ok"); haptic("ok"); render();
+    };
+  });
+  $$("[data-no]").forEach(b => {
+    b.onclick = () => {
+      const x = db().deposits.filter(y => y.id === b.dataset.no)[0];
+      if (!x) return;
+      x.status = "rejected"; save(); toast("Deposit rejected"); render();
+    };
+  });
+  $$("[data-pay]").forEach(b => {
+    b.onclick = () => {
+      const x = db().withdrawals.filter(y => y.id === b.dataset.pay)[0];
+      if (!x) return;
+      x.status = "paid"; save(); toast("Marked paid", "ok"); render();
+    };
+  });
+  $$("[data-wrej]").forEach(b => {
+    b.onclick = () => {
+      const d = db();
+      const x = d.withdrawals.filter(y => y.id === b.dataset.wrej)[0];
+      if (!x) return;
+      x.status = "rejected";
+      const u = d.users[x.userId];
+      if (u) u.balance = +(u.balance + Number(x.amount)).toFixed(8);
+      save(); toast("Rejected and refunded"); render();
+    };
+  });
+  $$("[data-credit]").forEach(b => {
+    b.onclick = () => {
+      const d = db();
+      const u = d.users[b.dataset.credit];
+      if (!u) return;
+      sheet('<h2>Edit ' + esc(u.name) + '</h2><div class="k"><span>Balance now</span><span>' + money(u.balance) + '</span></div>' +
+        '<label>Amount to add (use -50 to remove)</label><input id="crAmt" inputmode="decimal" placeholder="100">' +
+        '<div style="height:14px"></div><button class="btn" id="crGo">Apply</button>' +
+        '<div style="height:8px"></div><button class="btn ghost" id="crMsg">Message this user</button>', () => {
+        $("#crGo").onclick = () => {
+          const v = parseFloat($("#crAmt").value) || 0;
+          u.balance = +Math.max(0, u.balance + v).toFixed(8);
+          save(); closeSheet(); toast("Balance updated", "ok"); render();
+        };
+        $("#crMsg").onclick = () => {
+          closeSheet(); adminTab = "broadcast"; render();
+          setTimeout(() => { const el = $("#dmTo"); if (el) el.value = u.tgId || ""; }, 80);
+        };
+      });
+    };
+  });
+  $$("[data-mtoggle]").forEach(b => {
+    b.onclick = () => {
+      const m = db().methods.filter(x => x.id === b.dataset.mtoggle)[0];
+      if (m) { m.on = (m.on === false); save(); render(); }
+    };
+  });
+  $$("[data-mdel]").forEach(b => {
+    b.onclick = () => {
+      db().methods = db().methods.filter(x => x.id !== b.dataset.mdel);
+      save(); toast("Method removed"); render();
+    };
+  });
+  const mAdd = $("#mAdd");
+  if (mAdd) mAdd.onclick = () => {
+    const wallet = $("#mWallet").value.trim();
+    const coin = $("#mCoin").value.trim().toUpperCase();
+    const address = $("#mAddr").value.trim();
+    if (!wallet) { toast("Name the wallet", "bad"); return; }
+    if (!coin) { toast("Which coin?", "bad"); return; }
+    if (address.length < 8) { toast("Enter the receiving address", "bad"); return; }
+    db().methods.push({ id: "m_" + uid(), wallet: wallet, coin: coin, network: $("#mNet").value, address: address, note: $("#mNote").value.trim(), on: true, ts: now() });
+    save(); toast("Method added", "ok"); render();
+  };
+  const cAdd = $("#cAdd");
+  if (cAdd) cAdd.onclick = () => {
+    const sym = $("#cSym").value.trim().toUpperCase();
+    const name = $("#cName").value.trim() || sym;
+    const p = $("#cPrice").value.trim();
+    if (!sym) { toast("Symbol required", "bad"); return; }
+    db().customCoins = db().customCoins || [];
+    if (db().customCoins.filter(c => c.sym === sym).length || coinBy(sym)) { toast("Already listed", "bad"); return; }
+    db().customCoins.push({ id: sym.toLowerCase(), sym: sym, name: name, price: p ? (parseFloat(p) || 0) : null, img: "" });
+    save(); toast("Coin added", "ok"); render();
+  };
+  $$("[data-cdel]").forEach(b => {
+    b.onclick = () => {
+      db().customCoins = (db().customCoins || []).filter(c => c.sym !== b.dataset.cdel);
+      save(); render();
+    };
+  });
+  $$("[data-reply]").forEach(b => {
+    b.onclick = () => {
+      const id = b.dataset.reply;
+      const u = db().users[id] || { name: id };
+      const t = db().tickets[id] || [];
+      const msgs = t.map(m => '<div class="msg ' + (m.from === "user" ? "u" : "a") + '">' + esc(m.text) + '<span class="when">' + ago(m.ts) + '</span></div>').join("");
+      sheet('<h2>' + esc(u.name) + '</h2><div class="chat" style="max-height:40vh">' + msgs + '</div>' +
+        '<label>Reply</label><textarea id="rpText" placeholder="Type your reply..."></textarea>' +
+        '<div style="height:12px"></div><button class="btn" id="rpGo">Send reply</button>', () => {
+        $("#rpGo").onclick = async () => {
+          const v = $("#rpText").value.trim();
+          if (!v) { toast("Write a reply", "bad"); return; }
+          const d = db();
+          d.tickets[id] = d.tickets[id] || [];
+          d.tickets[id].push({ from: "admin", text: v, ts: now() });
+          save();
+          const r = await relay({ action: "send", to: u.tgId || "", text: "\uD83D\uDCAC Support from " + CONFIG.brand + "\n\n" + v });
+          if (r.ok) { toast("Delivered on Telegram", "ok"); } else { toast("Saved here. Relay needed: " + (r.error || ""), "bad"); }
+          closeSheet(); render();
+        };
+      });
+    };
+  });
+  const bc = $("#bcGo");
+  if (bc) bc.onclick = async () => {
+    const v = $("#bcText").value.trim();
+    if (!v) { toast("Write the announcement", "bad"); return; }
+    bc.disabled = true; bc.textContent = "Sending...";
+    const r = await relay({ action: "broadcast", text: v });
+    bc.disabled = false; bc.textContent = "Send to everyone";
+    if (r.ok) { toast("Broadcast queued by the bot", "ok"); haptic("ok"); $("#bcText").value = ""; }
+    else { toast("Not sent: " + (r.error || "relay not connected"), "bad"); }
+  };
+  const dm = $("#dmGo");
+  if (dm) dm.onclick = async () => {
+    let to = $("#dmTo").value.trim();
+    const v = $("#dmText").value.trim();
+    if (!v) { toast("Write the message", "bad"); return; }
+    const d = db();
+    if (to.indexOf("@") > -1 || /[a-z]/i.test(to)) {
+      const found = Object.keys(d.users).map(k => d.users[k]).filter(u => u.email === to.toLowerCase())[0];
+      to = found ? found.tgId : "";
+    }
+    if (!to) { toast("No Telegram id for that user", "bad"); return; }
+    const r = await relay({ action: "send", to: to, text: v });
+    if (r.ok) { toast("Message delivered", "ok"); $("#dmText").value = ""; }
+    else { toast("Not sent: " + (r.error || "relay not connected"), "bad"); }
+  };
+  const st = $("#stSave");
+  if (st) st.onclick = () => {
+    db().settings.relayUrl = $("#stUrl").value.trim();
+    db().settings.adminKey = $("#stKey").value.trim();
+    save(); toast("Relay saved", "ok");
+  };
+  const sT = $("#stTest");
+  if (sT) sT.onclick = async () => {
+    const r = await relay({ action: "ping" });
+    toast(r.ok ? "Relay answered" : "No answer: " + (r.error || "check the URL and key"), r.ok ? "ok" : "bad");
+  };
+  const sP = $("#stPass");
+  if (sP) sP.onclick = () => setAdminPass();
+  const sE = $("#stExport");
+  if (sE) sE.onclick = () => {
+    const blob = new Blob([JSON.stringify(db(), null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "flashcoin-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+  const sL = $("#stLock");
+  if (sL) sL.onclick = () => adminOff();
+}
+
+/* ---------- sheets ---------- */
+function sheet(html, bind) {
+  $("#modalRoot").innerHTML = '<div class="sheet" id="sh"><div class="box"><div class="grab"></div>' + html + '</div></div>';
+  if (bind) bind();
+  $("#sh").onclick = ev => { if (ev.target.id === "sh") closeSheet(); };
+}
+function closeSheet() { $("#modalRoot").innerHTML = ""; }
+function doneSheet(title, big, cap, ref) {
+  $("#modalRoot").innerHTML = '<div class="sheet"><div class="box"><div class="done">' +
+    '<svg viewBox="0 0 60 60"><circle class="ring" cx="30" cy="30" r="26"/><path class="tick" d="M18 31l8 8 16-17"/></svg>' +
+    '<div style="font-weight:750;font-size:15px">' + esc(title) + '</div>' +
+    '<div class="big">' + esc(big) + '</div>' +
+    '<div class="cap">' + esc(cap) + '</div>' +
+    (ref ? '<div class="tiny" style="margin-top:8px">' + esc(ref) + '</div>' : '') +
+    '<div style="height:16px"></div><button class="btn ghost" id="doneClose">Done</button>' +
+    '</div></div></div>';
+  $("#doneClose").onclick = () => { closeSheet(); render(); };
+}
+
+/* ---------- boot ---------- */
+(async function boot() {
+  tgInit();
+  Store.get();
+  await loadPrices(false);
+  render();
+  loadPrices(true).then(() => { if (route === "market" || route === "home") render(); });
+})();
+</script>
+</body>
+</html>
