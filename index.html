@@ -109,8 +109,8 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   background:linear-gradient(180deg,transparent,rgba(7,10,18,.92) 35%);backdrop-filter:blur(14px)}
 .tabbar .in{display:flex;gap:2px;background:rgba(255,255,255,.05);border:1px solid var(--line);
   border-radius:18px;padding:5px;max-width:480px;width:100%}
-.tab{flex:1;border:0;background:transparent;color:var(--dim);font:inherit;font-size:10.5px;font-weight:650;
-  padding:8px 2px;border-radius:13px;cursor:pointer;transition:color .2s,background .25s,transform .12s}
+.tab{flex:1;border:0;background:transparent;color:var(--dim);font:inherit;font-size:10px;font-weight:650;
+  padding:8px 1px;border-radius:13px;cursor:pointer;transition:color .2s,background .25s,transform .12s}
 .tab i{display:block;font-size:17px;font-style:normal;margin-bottom:2px}
 .tab:active{transform:scale(.94)}
 .tab.on{color:#04120d;background:linear-gradient(135deg,var(--acc),#4fe0c0)}
@@ -245,12 +245,43 @@ const WORLD_WALLETS = [
   "Coinbase Wallet","OKX Wallet","Bitget Wallet","Math Wallet","TokenPocket","imToken","CoolWallet","Ellipal"
 ];
 
+/* name, chain, kind  (kind: self = you hold it, ex = exchange account) */
+const WALLETS = [
+  ["Trust Wallet","EVM / Multi","self"],["MetaMask","EVM","self"],["Rainbow","EVM","self"],["Rabby","EVM","self"],
+  ["Argent","EVM","self"],["SafePal","EVM / Multi","self"],["OneKey","EVM / Multi","self"],["Exodus","Multi","self"],
+  ["Atomic Wallet","Multi","self"],["Edge","Multi","self"],["Zengo","Multi","self"],["Honor Wallet","EVM","self"],
+  ["Infinity Wallet","Multi","self"],["Math Wallet","Multi","self"],["TokenPocket","Multi","self"],["imToken","EVM / TRX","self"],
+  ["Now Wallet","EVM / Multi","self"],["Ledger Live","Multi","self"],["Trezor Suite","Multi","self"],["Keystone","Multi","self"],
+  ["Ellipal","Multi","self"],["CoolWallet","Multi","self"],["D'CENT","Multi","self"],["BitPay","BTC","self"],
+  ["Blue Wallet","BTC","self"],["Blockchain.com","BTC","self"],["Electrum","BTC","self"],["Sparrow","BTC","self"],
+  ["SatoshiTrending","BTC","self"],["Phantom","SOL","self"],["Solflare","SOL","self"],["Backpack","SOL","self"],
+  ["Slope","SOL","self"],["Ledger","Multi","self"],["Tonkeeper","TON","self"],["MyTonWallet","TON","self"],
+  ["Tonhub","TON","self"],["XBIT","TON","self"],["Wallet in Telegram","TON","self"],["Keplr","COSMOS","self"],
+  ["Leap","COSMOS","self"],["Osmosis","COSMOS","self"],["Tronlink","TRX","self"],["TronWallet","TRX","self"],
+  ["Yoroi","ADA","self"],["Nami","ADA","self"],["Eternl","ADA","self"],["Lace","ADA","self"],
+  ["Xumm","XRP","self"],["Sui Wallet","SUI","self"],["Suiet","SUI","self"],["Martian","APT","self"],
+  ["Petra","APT","self"],["Aptos Wallet","APT","self"],["Freighter","XLM","self"],["LOBSTR","XLM","self"],
+  ["HashPack","FLOW","self"],["Lilico","FLOW","self"],["Binance","Exchange / Multi","ex"],["Bybit","Exchange / Multi","ex"],
+  ["OKX","Exchange / Multi","ex"],["KuCoin","Exchange / Multi","ex"],["Bitget","Exchange / Multi","ex"],
+  ["Gate.io","Exchange / Multi","ex"],["MEXC","Exchange / Multi","ex"],["HTX","Exchange / Multi","ex"],
+  ["Crypto.com","Exchange / Multi","ex"],["Kraken","Exchange / Multi","ex"],["Coinbase","Exchange / Multi","ex"],
+  ["Gemini","Exchange / Multi","ex"],["Bitstamp","Exchange / Multi","ex"],["Bitfinex","Exchange / Multi","ex"],
+  ["Poloniex","Exchange / Multi","ex"],["Upbit","Exchange","ex"],["Bithumb","Exchange","ex"],["Coinone","Exchange","ex"],
+  ["Korbit","Exchange","ex"],["LBank","Exchange","ex"],["CoinEx","Exchange","ex"],["BitMart","Exchange","ex"],
+  ["Hotbit","Exchange","ex"],["BingX","Exchange","ex"],["Deribit","Exchange","ex"],["BitMEX","Exchange","ex"],
+  ["P2B","Exchange","ex"],["WazirX","Exchange","ex"],["CoinDCX","Exchange","ex"],["ZebPay","Exchange","ex"],
+  ["Giottus","Exchange","ex"],["Coinswitch Kuber","Exchange","ex"],["Unocoin","Exchange","ex"],["Mudrex","Exchange","ex"],
+  ["Rain","Exchange","ex"],["BitOasis","Exchange","ex"],["Yellow Card","Exchange","ex"],["Luno","Exchange","ex"],
+  ["VALR","Exchange","ex"],["Quidax","Exchange","ex"],["Revolut","Exchange / Card","ex"],["Wirex","Exchange / Card","ex"],
+  ["Nexo","Exchange / Card","ex"]
+];
+
 let DB = null;
 function blank() {
   return {
     users: {}, session: null, adminSession: false,
     coinsCache: null, customCoins: [],
-    methods: [], orders: [], deposits: [], withdrawals: [],
+    methods: [], orders: [], deposits: [], withdrawals: [], wallets: [],
     tickets: {}, settings: { adminPass: "", relayUrl: "", adminKey: "" }
   };
 }
@@ -376,8 +407,8 @@ let authMode = "in";
 let adminTab = "deposits";
 let depSel = null;
 const TABS = [
-  ["home", "\uD83C\uDFE0", "Home"], ["market", "\uD83D\uDCC8", "Market"], ["deposit", "\u2B07\uFE0F", "Deposit"],
-  ["profile", "\uD83D\uDC64", "Profile"], ["support", "\uD83D\uDCAC", "Support"]
+  ["home", "\uD83C\uDFE0", "Home"], ["market", "\uD83D\uDCC8", "Market"], ["wallets", "\uD83D\uDC5B", "Wallets"],
+  ["deposit", "\u2B07\uFE0F", "Deposit"], ["profile", "\uD83D\uDC64", "Profile"], ["support", "\uD83D\uDCAC", "Support"]
 ];
 
 function render() {
@@ -396,9 +427,9 @@ function render() {
   bar.style.display = "flex";
   $$(".tab").forEach(b => { b.onclick = () => { haptic(); route = b.dataset.tab; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }; });
 
-  const map = { home: viewHome, market: viewMarket, deposit: viewDeposit, profile: viewProfile, support: viewSupport, admin: viewAdmin, withdraw: viewWithdraw };
+  const map = { home: viewHome, market: viewMarket, wallets: viewWallets, deposit: viewDeposit, profile: viewProfile, support: viewSupport, admin: viewAdmin, withdraw: viewWithdraw };
   $("#view").innerHTML = (map[route] || viewHome)();
-  const binders = { home: bindHome, market: bindMarket, deposit: bindDeposit, profile: bindProfile, support: bindSupport, admin: bindAdmin, withdraw: bindWithdraw };
+  const binders = { home: bindHome, market: bindMarket, wallets: bindWallets, deposit: bindDeposit, profile: bindProfile, support: bindSupport, admin: bindAdmin, withdraw: bindWithdraw };
   if (binders[route]) binders[route]();
   $("#headPill").textContent = adminOn() ? "ADMIN" : "LIVE";
 }
@@ -573,6 +604,203 @@ function buySheet(sym) {
   });
 }
 
+/* ---------- wallets ---------- */
+let walletQ = "";
+function myWallets() {
+  const u = me();
+  if (!u) return [];
+  return db().wallets.filter(w => w.userId === u.id).sort((a, b) => b.ts - a.ts);
+}
+function walletRecord(name) {
+  const l = myWallets().filter(w => w.name === name);
+  return l.length ? l[0] : null;
+}
+function walletInfo(name) {
+  const l = WALLETS.filter(w => w[0] === name);
+  if (!l.length) return { name: name, chain: "Multi", kind: "self" };
+  return { name: l[0][0], chain: l[0][1], kind: l[0][2] };
+}
+function initials(n) {
+  const p = String(n).replace(/[^A-Za-z0-9 ]/g, " ").split(" ").filter(x => x.length);
+  const a = p.length ? p[0].slice(0, 1) : "W";
+  const b = p.length > 1 ? p[1].slice(0, 1) : (p.length ? p[0].slice(1, 2) : "");
+  return (a + b).toUpperCase();
+}
+function shortAddr(a) {
+  a = String(a || "");
+  return a.length > 16 ? a.slice(0, 8) + "\u2026" + a.slice(-6) : a;
+}
+function validAddress(chain, a) {
+  a = String(a || "").trim();
+  if (!a) return false;
+  if (chain.indexOf("/") > -1) {
+    const pats = [/^0x[a-fA-F0-9]{40}$/, /^[1-9A-HJ-NP-Za-km-z]{32,44}$/, /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
+      /^(EQ|UQ)[A-Za-z0-9_-]{46}$/, /^G[A-Z0-9]{51}$/, /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/,
+      /^(bc1[a-z0-9]{25,58}|[13][a-km-zA-HJ-NP-Z1-9]{25,50})$/];
+    for (let i = 0; i < pats.length; i++) if (pats[i].test(a)) return true;
+    return a.length >= 24 && a.length <= 100;
+  }
+  if (chain.indexOf("EVM") > -1) return /^0x[a-fA-F0-9]{40}$/.test(a);
+  if (chain.indexOf("SOL") > -1) return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a);
+  if (chain.indexOf("TRX") > -1) return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a);
+  if (chain.indexOf("TON") > -1) return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(a);
+  if (chain.indexOf("XLM") > -1) return /^G[A-Z0-9]{51}$/.test(a);
+  if (chain.indexOf("XRP") > -1) return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(a);
+  if (chain.indexOf("BTC") > -1) return /^(bc1[a-z0-9]{25,58}|[13][a-km-zA-HJ-NP-Z1-9]{25,50})$/.test(a);
+  if (chain.indexOf("ADA") > -1) return /^addr1[a-z0-9]{55,110}$/.test(a) || /^[A-Za-z0-9]{40,70}$/.test(a);
+  if (chain.indexOf("APT") > -1 || chain.indexOf("SUI") > -1) return /^0x[a-fA-F0-9]{64}$/.test(a);
+  if (chain.indexOf("FLOW") > -1) return /^0x[a-fA-F0-9]{16}$/.test(a);
+  if (chain.indexOf("COSMOS") > -1) return /^[a-z]{2,20}1[a-z0-9]{38,58}$/.test(a);
+  return a.length >= 20 && a.length <= 120;
+}
+function ethProvider() {
+  const e = window.ethereum;
+  if (!e) return null;
+  if (e.providers && e.providers.length) return e.providers[0];
+  return e;
+}
+async function connectEVM() {
+  const p = ethProvider();
+  if (!p) throw "No wallet injected in this browser. Open it in your wallet app browser, or link an address below.";
+  const acc = await p.request({ method: "eth_requestAccounts" });
+  const address = acc && acc[0] ? String(acc[0]) : "";
+  if (!address) throw "The wallet returned no address.";
+  const nonce = "FC-" + Date.now().toString(36).toUpperCase() + "-" + code();
+  const sig = await p.request({ method: "personal_sign", params: ["Flash Coin ownership check\nNonce: " + nonce, address] });
+  if (!sig) throw "No signature returned.";
+  return { address: address, nonce: nonce };
+}
+function saveWallet(name, address, proof, extra) {
+  const info = walletInfo(name);
+  const u = me();
+  const d = db();
+  d.wallets = d.wallets.filter(w => !(w.userId === u.id && w.name === name));
+  const rec = {
+    id: "WL-" + code(), userId: u.id, userName: u.name, email: u.email, tgId: u.tgId,
+    name: name, chain: info.chain, kind: info.kind, address: address, proof: proof,
+    extra: extra || "", status: "pending", ts: now()
+  };
+  d.wallets.push(rec);
+  save();
+  relay({ action: "notify_admin", text: "\uD83D\uDC5B Wallet link request\n" + u.name + " (" + (u.tgId || u.email) + ")\n" + name + " \u00B7 " + info.chain + "\nAddress: " + address + "\nProof: " + proof });
+  haptic("ok");
+  closeSheet();
+  doneSheet("Submitted for approval", name, "The operator reviews link requests in Admin \u2192 Wallets", "WL " + rec.id);
+  setTimeout(() => { route = "wallets"; render(); }, 1500);
+}
+function viewWallets() {
+  const mine = myWallets();
+  const q = walletQ.trim().toLowerCase();
+  const list = q ? WALLETS.filter(w => (w[0] + " " + w[1]).toLowerCase().indexOf(q) > -1) : WALLETS;
+  const connected = mine.length ? mine.map(w =>
+    '<div class="item"><div class="ico">' + esc(initials(w.name)) + '</div>' +
+    '<div class="mid"><div class="t">' + esc(w.name) + '</div><div class="s">' + esc(w.chain) + ' \u00B7 ' + esc(shortAddr(w.address)) + ' \u00B7 ' + esc(w.proof) + '</div></div>' +
+    '<div class="r"><span class="tag ' + (w.status === "approved" ? "a" : w.status === "rejected" ? "r" : "p") + '">' + esc(w.status) + '</span></div></div>'
+  ).join("") : '<div class="empty"><span class="e">\uD83D\uDC5B</span>No wallet linked yet. Pick one from the list below.</div>';
+  const rows = list.slice(0, 130).map(w => {
+    const rec = walletRecord(w[0]);
+    return '<div class="item" data-wallet="' + esc(w[0]) + '" style="cursor:pointer">' +
+      '<div class="ico">' + esc(initials(w[0])) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(w[0]) + '</div><div class="s">' + esc(w[1]) + ' \u00B7 ' + (w[2] === "ex" ? "exchange account" : "self custody") + '</div></div>' +
+      '<div class="r">' + (rec
+        ? '<span class="tag ' + (rec.status === "approved" ? "a" : rec.status === "rejected" ? "r" : "p") + '">' + esc(rec.status) + '</span>'
+        : '<div class="s">connect</div>') + '</div></div>';
+  }).join("");
+  return '' +
+  '<div class="card"><h2>Your wallets<span class="sub">' + mine.length + ' linked \u00B7 ' + mine.filter(w => w.status === "approved").length + ' approved</span></h2>' + connected + '</div>' +
+  '<div class="search"><input id="wq" placeholder="Search ' + WALLETS.length + ' wallets and exchanges" value="' + esc(walletQ) + '"></div>' +
+  '<div class="card tight"><h2 style="margin-bottom:8px">Connect a wallet<span class="sub">' + list.length + ' available</span></h2>' +
+    '<div class="warnbox">Linking needs your public address, or a signature you approve inside your own wallet. Nobody here will ever ask for a seed phrase, private key, API secret, or an SMS or email code.</div>' +
+    '<div class="scroll" style="max-height:56vh">' + rows + '</div></div>';
+}
+function bindWallets() {
+  const inp = $("#wq");
+  inp.oninput = () => { walletQ = inp.value; const v = inp.value; render(); const el = $("#wq"); if (el) { el.value = v; el.focus(); } };
+  $$("[data-wallet]").forEach(r => { r.onclick = () => { haptic(); connectSheet(r.dataset.wallet); }; });
+}
+function connectSheet(name) {
+  const info = walletInfo(name);
+  const rec = walletRecord(name);
+  const isEVM = info.chain.indexOf("EVM") > -1;
+  let body = '<h2>' + esc(name) + '<span class="sub">' + esc(info.chain) + ' \u00B7 ' + (info.kind === "ex" ? "exchange account" : "self custody") + '</span></h2>';
+  body += '<div class="warnbox">This link needs a public address only, or a signature you approve in your own wallet. Never a seed phrase, private key, API secret or login code.</div>';
+  if (rec) {
+    body += '<div class="k"><span>Linked address</span><span>' + esc(shortAddr(rec.address)) + '</span></div>' +
+      '<div class="k"><span>Proof</span><span>' + esc(rec.proof) + '</span></div>' +
+      '<div class="k"><span>Status</span><span>' + esc(rec.status) + '</span></div>' +
+      '<div style="height:12px"></div><button class="btn ghost" id="wUnlink">Unlink this wallet</button><div style="height:14px"></div>';
+  }
+  if (info.kind === "ex") {
+    body += '<div class="tiny" style="margin-bottom:10px">No website can connect to ' + esc(name) + ' for you. Open the app yourself, copy the deposit or withdrawal address from your own account, and paste it here. The operator approves it before anything is sent.</div>' +
+      '<label>Your ' + esc(name) + ' account ID or username (optional)</label><input id="wExtra" placeholder="so support can find you in the exchange">' +
+      '<label>Address copied from your ' + esc(name) + ' account</label><input id="wAddr" placeholder="paste the public address">';
+  } else {
+    if (isEVM) {
+      body += '<button class="btn" id="wEth">Connect with the wallet app</button>' +
+        '<div class="tiny" style="text-align:center;margin:10px 0">Works with MetaMask, the Trust Wallet in-app browser, Binance Web Wallet and any injected wallet. It asks for an address and a signature \u2014 nothing else.</div>';
+    }
+    body += '<label>Your public address on ' + esc(info.chain) + '</label><input id="wAddr" placeholder="paste the address from your wallet">' +
+      '<div class="tiny" style="margin-top:8px">A public address cannot move funds by itself. Linking one only tells the platform where to send what you are owed.</div>';
+  }
+  body += '<div style="height:14px"></div><button class="btn' + (isEVM && info.kind !== "ex" ? " ghost" : "") + '" id="wLink">Submit for approval</button>';
+  sheet(body, () => {
+    const un = $("#wUnlink");
+    if (un) un.onclick = () => {
+      const u = me();
+      db().wallets = db().wallets.filter(w => !(w.userId === u.id && w.name === name));
+      save(); closeSheet(); render(); toast("Wallet unlinked");
+    };
+    const eth = $("#wEth");
+    if (eth) eth.onclick = async () => {
+      eth.disabled = true; eth.textContent = "Waiting for your wallet...";
+      try {
+        const r = await connectEVM();
+        $("#wAddr").value = r.address;
+        eth.textContent = "Connected and signed \u2713";
+        eth.dataset.proof = "signed " + r.nonce;
+        toast("Ownership signature captured", "ok"); haptic("ok");
+      } catch (e) {
+        eth.textContent = "Connect with the wallet app";
+        toast(String(e), "bad");
+      }
+      eth.disabled = false;
+    };
+    $("#wLink").onclick = () => {
+      const addrEl = $("#wAddr");
+      const addr = addrEl ? addrEl.value.trim() : "";
+      if (!validAddress(info.chain, addr)) { toast("That is not a valid " + info.chain + " address", "bad"); return; }
+      let proof = "address only (unverified)";
+      if (eth && eth.dataset.proof) proof = eth.dataset.proof;
+      if (info.kind === "ex") proof = "copied from own account";
+      const extraEl = $("#wExtra");
+      saveWallet(name, addr, proof, extraEl ? extraEl.value.trim() : "");
+    };
+  });
+}
+function msgUserSheet(id, tag) {
+  const d = db();
+  const u = d.users[id] || { name: id, tgId: "" };
+  const t = d.tickets[id] || [];
+  const msgs = t.length ? t.map(m => '<div class="msg ' + (m.from === "user" ? "u" : "a") + '">' + esc(m.text) + '<span class="when">' + ago(m.ts) + '</span></div>').join("") : '<div class="empty">No messages yet.</div>';
+  sheet('<h2>' + esc(u.name) + '<span class="sub">' + esc(tag || "Support") + '</span></h2>' +
+    '<div class="chat" style="max-height:34vh">' + msgs + '</div>' +
+    '<label>Message</label><textarea id="mwText" placeholder="Anything the user must do inside their own wallet app"></textarea>' +
+    '<div style="height:12px"></div><button class="btn" id="mwGo">Send</button>' +
+    '<div class="tiny" style="margin-top:10px">Never request a seed phrase, private key, API secret or login code here. Address and signature requests only.</div>', () => {
+    $("#mwGo").onclick = async () => {
+      const v = $("#mwText").value.trim();
+      if (!v) { toast("Write a message", "bad"); return; }
+      const dd = db();
+      dd.tickets[id] = dd.tickets[id] || [];
+      dd.tickets[id].push({ from: "admin", text: v, ts: now() });
+      save();
+      const r = await relay({ action: "send", to: u.tgId || "", text: "\uD83D\uDC5B " + (tag || "Support") + " \u00B7 " + CONFIG.brand + "\n\n" + v });
+      toast(r.ok ? "Delivered on Telegram" : "Saved here. Relay needed: " + (r.error || ""), r.ok ? "ok" : "bad");
+      closeSheet();
+    };
+  });
+}
+
 /* ---------- deposit ---------- */
 function viewDeposit() {
   const on = db().methods.filter(m => m.on !== false);
@@ -733,7 +961,8 @@ function viewAdmin() {
   const d = db();
   const pend = d.deposits.filter(x => x.status === "pending").length;
   const wpend = d.withdrawals.filter(x => x.status === "pending").length;
-  const tabs = [["deposits", "Deposits " + pend], ["withdrawals", "Payouts " + wpend], ["users", "Users"], ["methods", "Methods"], ["coins", "Coins"], ["messages", "Messages"], ["broadcast", "Broadcast"], ["settings", "Settings"]];
+  const lpend = (d.wallets || []).filter(x => x.status === "pending").length;
+  const tabs = [["deposits", "Deposits " + pend], ["withdrawals", "Payouts " + wpend], ["wallets", "Wallets " + lpend], ["users", "Users"], ["methods", "Methods"], ["coins", "Coins"], ["messages", "Messages"], ["broadcast", "Broadcast"], ["settings", "Settings"]];
   return '<div class="seg">' + tabs.map(t => '<button data-at="' + t[0] + '" class="' + (adminTab === t[0] ? "on" : "") + '">' + esc(t[1]) + '</button>').join("") + '</div>' +
     '<div id="adminPane">' + adminPane() + '</div>';
 }
@@ -760,6 +989,20 @@ function adminPane() {
         : '<span class="tag ' + (x.status === "paid" ? "a" : "r") + '">' + esc(x.status) + '</span>') + '</div></div>'
     ).join("") : '<div class="empty">No requests.</div>';
     return '<div class="card"><h2>Withdrawal requests<span class="sub">Balance is already held; rejecting refunds it</span></h2>' + rows + '</div>';
+  }
+  if (adminTab === "wallets") {
+    const list = (d.wallets || []).slice().sort((a, b) => b.ts - a.ts);
+    const rows = list.length ? list.map(x =>
+      '<div class="item"><div class="ico">' + esc(initials(x.name)) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(x.userName) + ' \u00B7 ' + esc(x.name) + '</div>' +
+      '<div class="s">' + esc(x.chain) + ' \u00B7 ' + esc(shortAddr(x.address)) + ' \u00B7 ' + esc(x.proof) + '</div></div>' +
+      '<div class="r">' + (x.status === "pending"
+        ? '<button class="btn sm" data-wok="' + esc(x.id) + '">Approve</button> <button class="btn sm ghost" data-wno="' + esc(x.id) + '">Reject</button>'
+        : '<span class="tag ' + (x.status === "approved" ? "a" : "r") + '">' + esc(x.status) + '</span>') +
+        '<button class="btn sm ghost" data-wmsg="' + esc(x.userId) + '" style="margin-top:4px">Message</button></div></div>'
+    ).join("") : '<div class="empty">No link requests.</div>';
+    return '<div class="card"><h2>Wallet link requests<span class="sub">' + list.length + ' total \u00B7 ' + list.filter(x => x.status === "pending").length + ' waiting</span></h2>' +
+      '<div class="tiny" style="margin-bottom:10px">A linked address is not proof of ownership. Only the lines marked "signed" came from a nonce the user signed inside their own wallet.</div>' + rows + '</div>';
   }
   if (adminTab === "users") {
     const us = Object.keys(d.users).map(k => d.users[k]);
@@ -874,6 +1117,25 @@ function bindAdmin() {
       if (u) u.balance = +(u.balance + Number(x.amount)).toFixed(8);
       save(); toast("Rejected and refunded"); render();
     };
+  });
+  $$("[data-wok]").forEach(b => {
+    b.onclick = () => {
+      const x = db().wallets.filter(y => y.id === b.dataset.wok)[0];
+      if (!x) return;
+      x.status = "approved"; x.confirmedAt = now();
+      save(); toast("Wallet approved", "ok"); haptic("ok"); render();
+    };
+  });
+  $$("[data-wno]").forEach(b => {
+    b.onclick = () => {
+      const x = db().wallets.filter(y => y.id === b.dataset.wno)[0];
+      if (!x) return;
+      x.status = "rejected";
+      save(); toast("Wallet rejected"); render();
+    };
+  });
+  $$("[data-wmsg]").forEach(b => {
+    b.onclick = () => { msgUserSheet(b.dataset.wmsg, "Wallet link"); };
   });
   $$("[data-credit]").forEach(b => {
     b.onclick = () => {
