@@ -173,6 +173,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
     <div class="logo">&#9889;</div>
     <div class="brand">Flash Coin<small>VERIFIED CRYPTO DESK</small></div>
     <div class="spacer"></div>
+    <button class="pill" id="gear" style="cursor:pointer;font:inherit;font-size:15px;line-height:1;padding:7px 11px" title="Admin">&#9881;</button>
     <div class="pill ok" id="headPill">LIVE</div>
   </div>
   <main id="view"></main>
@@ -414,6 +415,12 @@ const TABS = [
 function render() {
   const u = me();
   const bar = $("#tabbar");
+  const gear = $("#gear");
+  if (gear) gear.onclick = () => {
+    if (!me()) { toast("Sign in first, then tap the gear again", "bad"); return; }
+    if (adminOn()) { route = "admin"; render(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    else { askAdminPass(); }
+  };
   if (!u) {
     bar.style.display = "none";
     $("#view").innerHTML = viewAuth();
@@ -915,10 +922,11 @@ function viewProfile() {
     '<div class="k"><span>Tokens held</span><span>' + hold.length + '</span></div>' +
     '<div class="k"><span>Total orders</span><span>' + orders.length + '</span></div>' +
     '<div class="k"><span>Telegram ID</span><span>' + (u.tgId ? esc(u.tgId) : "not linked") + '</span></div>' +
-    '<div class="k"><span>Member since</span><span>' + new Date(u.created).toLocaleDateString() + '</span></div></div>' +
+    '<div class="k"><span>Member since</span><span>' + new Date(u.created).toLocaleDateString() + '</span></div>' +
+    '<div class="k"><span>App build</span><span>b4-admin-gear</span></div></div>' +
     '<div class="card"><h2>Purchased tokens</h2>' + holdings + '</div>' +
     '<div class="card"><h2>Order history</h2>' + ords + '</div>' +
-    '<div class="card"><button class="btn ghost" id="pAdmin">' + (adminOn() ? "Open admin panel" : "Operator panel") + '</button>' +
+    '<div class="card"><button class="btn ghost" id="pAdmin">' + (adminOn() ? "Open admin panel" : "Admin panel") + '</button>' +
     '<div style="height:8px"></div><button class="btn danger" id="pOut">Log out</button></div>';
 }
 function bindProfile() {
