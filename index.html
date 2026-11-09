@@ -283,6 +283,7 @@ function blank() {
     users: {}, session: null, adminSession: false,
     coinsCache: null, customCoins: [],
     methods: [], orders: [], deposits: [], withdrawals: [], wallets: [],
+    rates: {}, tiers: [20, 50, 100, 200, 500, 1000],
     tickets: {}, settings: { adminPass: "", relayUrl: "", adminKey: "" }
   };
 }
@@ -384,6 +385,47 @@ function coins() {
   return out;
 }
 function coinBy(sym) { const l = coins().filter(c => c.sym === sym); return l.length ? l[0] : null; }
+
+/* ---------- desk pricing: admin sets a spread or a fixed price per coin ---------- */
+const SPREAD_MAX = 25;
+function rateOf(sym) {
+  const c = coinBy(sym) || { sym: sym, name: sym, price: null };
+  const r = (db().rates || {})[sym] || { mode: "market", spread: 0, price: null };
+  const market = c.price;
+  let unit = null;
+  let label = "market price";
+  if (r.mode === "fixed" && Number(r.price) > 0) {
+    unit = Number(r.price);
+    label = "desk price " + money(unit) + " (fixed)";
+  } else if (r.mode === "spread" && market) {
+    const s = Math.max(-SPREAD_MAX, Math.min(SPREAD_MAX, Number(r.spread) || 0));
+    unit = market * (1 + s / 100);
+    label = (s >= 0 ? "market +" + s + "%" : "market " + s + "%");
+  } else if (market) {
+    unit = market;
+    label = "market price";
+  }
+  return { sym: sym, name: c.name, market: market, unit: unit, spread: Number(r.spread) || 0, mode: r.mode, fixed: r.price, label: label, img: c.img };
+}
+function setRate(sym, mode, spread, price) {
+  const d = db();
+  d.rates = d.rates || {};
+  d.rates[sym] = { mode: mode, spread: Number(spread) || 0, price: price ? Number(price) : null, ts: now() };
+  save();
+}
+function tiers() {
+  const t = (db().tiers || []).filter(x => Number(x) > 0).map(x => Number(x));
+  return t.length ? t : [20, 50, 100, 200, 500, 1000];
+}
+function setTiers(list) {
+  db().tiers = list.filter(x => Number(x) > 0).map(x => Number(x));
+  save();
+}
+function tierLabel(v) {
+  if (v >= 1000000) return (v / 1000000) + "M";
+  if (v >= 1000) return (v / 1000) + "K";
+  return String(v);
+}
 
 /* ---------- relay to the bot ---------- */
 function relayCfg() {
@@ -511,13 +553,14 @@ function viewHome() {
   const u = me();
   const list = ordersAll();
   const hold = Object.keys(u.holdings || {});
-  const tick = list.slice(0, 8);
-  let feed = '<div class="empty"><span class="e">\uD83D\uDD53</span>No purchases yet. The feed fills the moment the first real order completes - nothing here is invented.</div>';
+  const settled = list.filter(o => o.status === "settled");
+  const tick = settled.slice(0, 8);
+  let feed = '<div class="empty"><span class="e">\uD83D\uDD53</span>No orders yet. This feed shows real orders and nothing else - a line appears when someone places one, and it only says settled once a transaction hash is recorded.</div>';
   if (list.length) {
     feed = '<div class="scroll">' + list.slice(0, 40).map(o =>
       '<div class="item"><div class="ico">' + esc((o.coin || "?").slice(0, 3)) + '</div>' +
       '<div class="mid"><div class="t">' + esc(o.userName || "Member") + ' bought ' + nfmt(o.amount) + ' ' + esc(o.coin) + '</div>' +
-      '<div class="s">' + esc(o.method || "wallet") + ' \u00B7 ' + ago(o.ts) + ' \u00B7 <span style="color:#00e0a4">verified</span></div></div>' +
+      '<div class="s">' + esc(o.network || "wallet") + ' \u00B7 ' + ago(o.ts) + ' \u00B7 ' + statusWord(o) + '</div></div>' +
       '<div class="r"><div class="v">' + money(o.total) + '</div></div></div>'
     ).join("") + '</div>';
   }
@@ -532,7 +575,7 @@ function viewHome() {
   }
   const ticker = tick.length
     ? '<div class="ticker"><div class="track">' + tick.concat(tick).map(o =>
-        '<span><b>' + esc(o.userName || "Member") + '</b> bought ' + nfmt(o.amount) + ' ' + esc(o.coin) + ' \u00B7 ' + esc(o.method || "wallet") + '</span>'
+        '<span><b>' + esc(o.userName || "Member") + '</b> settled ' + nfmt(o.amount) + ' ' + esc(o.coin) + ' on ' + esc(o.network || "chain") + '</span>'
       ).join("") + '</div></div>'
     : "";
   return '' +
@@ -543,7 +586,7 @@ function viewHome() {
     '<div class="qa" data-go="market"><i>\uD83D\uDED2</i>Buy coin</div>' +
     '<div class="qa" data-go="withdraw"><i>\u2B06\uFE0F</i>Withdraw</div>' +
   '</div>' + ticker +
-  '<div class="card"><h2>Live purchase feed<span class="sub">Verified orders only - every line here is a real completed purchase</span></h2>' + feed + '</div>' +
+  '<div class="card"><h2>Order feed<span class="sub">Real orders only \u00B7 settled means a transaction hash was recorded</span></h2>' + feed + '</div>' +
   '<div class="card"><h2>Your holdings<span class="sub">' + hold.length + ' token' + (hold.length === 1 ? "" : "s") + '</span></h2>' + holdings + '</div>';
 }
 function bindHome() {
@@ -576,39 +619,219 @@ function payMethodOptions() {
   if (!on.length) return '<option value="Deposit balance">Deposit balance</option>';
   return on.map(m => '<option value="' + esc(m.wallet + " \u00B7 " + m.network) + '">' + esc(m.wallet + " \u00B7 " + m.network) + '</option>').join("");
 }
+function chainFor(net) {
+  const n = String(net || "");
+  if (n === "Bitcoin") return "BTC";
+  if (n === "Litecoin") return "LTC";
+  if (n === "TRC-20") return "TRX";
+  if (n === "Solana") return "SOL";
+  if (n === "TON") return "TON";
+  if (n === "XRP") return "XRP";
+  if (n === "Cosmos") return "COSMOS";
+  if (n === "Aptos") return "APT";
+  if (n === "Sui") return "SUI";
+  if (n.indexOf("ERC-20") > -1 || n.indexOf("BEP-20") > -1 || n === "Polygon" || n === "Avalanche" ||
+      n === "Arbitrum" || n === "Base") return "EVM";
+  return "ANY";
+}
+function destOptions() {
+  const ok = myWallets().filter(w => w.status === "approved");
+  if (!ok.length) return '<option value="manual">Enter an address</option>';
+  return ok.map(w => '<option value="' + esc(w.id) + '">' + esc(w.name) + ' \u00B7 ' + esc(shortAddr(w.address)) + '</option>').join("") +
+    '<option value="manual">Enter another address</option>';
+}
 function buySheet(sym) {
   const c = coinBy(sym) || { sym: sym, name: sym, price: null };
-  sheet('<h2>Buy ' + esc(c.name) + '<span class="sub">' + esc(c.sym) + ' \u00B7 ' + prc(c.price) + '</span></h2>' +
-    (c.price ? '' : '<div class="warnbox">No live price for this coin, so buying stays closed until one is known.</div>') +
+  const r = rateOf(sym);
+  const unit = r.unit || c.price || 0;
+  const nets = networksFor(sym);
+  sheet('<h2>Buy ' + esc(c.name) + '<span class="sub">' + esc(c.sym) + ' \u00B7 ' + prc(unit) + ' \u00B7 ' + esc(r.label) + '</span></h2>' +
+    (unit ? '' : '<div class="warnbox">No price is set for this coin, so buying stays closed until one is known.</div>') +
+    '<label>Network to receive on</label><select id="bNet">' + nets.map(n => '<option>' + esc(n) + '</option>').join("") + '</select>' +
+    '<div class="tiny" style="margin-top:8px" id="bNetNote">Pick the network your wallet really holds ' + esc(c.sym) + ' on. Tokens sent on the wrong chain are usually unrecoverable - the desk cannot pull them back.</div>' +
+    '<label>Send to</label><select id="bDest">' + destOptions() + '</select>' +
+    '<div id="bAddrWrap" style="display:none"><label>Address on the chosen network</label><input id="bAddr" placeholder="paste the public address"></div>' +
+    '<label>Quick amounts (USD)</label><div class="row wrap" id="bTiers">' +
+      tiers().map(v => '<button class="btn sm ghost" data-tier="' + v + '">' + tierLabel(v) + '</button>').join("") +
+    '</div>' +
     '<label>Amount in ' + esc(c.sym) + '</label><input id="bAmt" inputmode="decimal" placeholder="0.00">' +
-    '<label>Payment method</label><select id="bMethod">' + payMethodOptions() + '</select>' +
+    '<label>Pay from</label><select id="bMethod">' + payMethodOptions() + '</select>' +
     '<div class="k" style="margin-top:12px"><span>Cost</span><span id="bCost">$0.00</span></div>' +
     '<div class="k"><span>Your balance</span><span>' + money(me().balance) + '</span></div>' +
     '<div style="height:16px"></div>' +
-    '<button class="btn" id="bGo"' + (c.price ? '' : ' disabled') + '>Confirm purchase</button>' +
-    '<div class="tiny" style="margin-top:10px;text-align:center">Verified purchase - your balance is debited and the tokens are added to your holdings.</div>', () => {
-    const amt = $("#bAmt"), cost = $("#bCost");
-    const upd = () => { cost.textContent = money((parseFloat(amt.value) || 0) * (c.price || 0)); };
+    '<button class="btn" id="bGo"' + (unit ? '' : ' disabled') + '>Place order</button>' +
+    '<div class="tiny" style="margin-top:10px;text-align:center">The amount is held, not paid out. The order turns settled only when the desk records a transaction hash you can check on-chain.</div>', () => {
+    const amt = $("#bAmt"), cost = $("#bCost"), net = $("#bNet"), dest = $("#bDest"), wrap = $("#bAddrWrap");
+    const upd = () => { cost.textContent = money((parseFloat(amt.value) || 0) * unit); };
     amt.oninput = upd;
+    const showAddr = () => { wrap.style.display = dest.value === "manual" ? "block" : "none"; };
+    dest.onchange = showAddr;
+    showAddr();
+    $$("[data-tier]").forEach(b => {
+      b.onclick = () => {
+        const usd = Number(b.dataset.tier);
+        if (!unit) { toast("No price set for " + c.sym, "bad"); return; }
+        amt.value = (usd / unit).toFixed(6);
+        upd();
+        haptic();
+        $$("[data-tier]").forEach(x => { x.className = "btn sm ghost"; });
+        b.className = "btn sm";
+      };
+    });
     $("#bGo").onclick = () => {
       const q = parseFloat(amt.value) || 0;
-      const total = q * (c.price || 0);
+      const total = q * unit;
       const u = me();
+      const network = net.value;
+      let address = "";
+      if (dest.value === "manual") { address = $("#bAddr").value.trim(); }
+      else {
+        const w = myWallets().filter(x => x.id === dest.value)[0];
+        address = w ? w.address : "";
+      }
+      if (!address) { toast("Enter the address to receive on", "bad"); return; }
+      if (!validAddress(chainFor(network), address)) { toast("That is not a valid " + network + " address", "bad"); return; }
       if (q <= 0) { toast("Enter an amount", "bad"); return; }
       if (total > u.balance) { toast("Balance too low - deposit first", "bad"); return; }
       u.balance = +(u.balance - total).toFixed(8);
-      u.holdings[c.sym] = +((u.holdings[c.sym] || 0) + q).toFixed(8);
       const o = {
         id: "ORD-" + code(), userId: u.id, userName: u.name, coin: c.sym, coinName: c.name,
-        amount: q, unit: c.price, total: +total.toFixed(8), method: $("#bMethod").value,
-        status: "verified", ts: now()
+        amount: q, unit: unit, total: +total.toFixed(8), method: $("#bMethod").value,
+        network: network, address: address, tx: "", status: "pending", ts: now()
       };
       db().orders.push(o); save();
+      relay({ action: "notify_admin", text: "\uD83D\uDD30 New order\n" + u.name + " (" + (u.tgId || u.email) + ")\n" + nfmt(q) + " " + c.sym + " on " + network + "\nSend to: " + address + "\nValue: " + money(total) });
       haptic("ok");
       closeSheet();
-      setTimeout(() => { doneSheet("Purchase complete", nfmt(q) + " " + c.sym, money(total) + " \u00B7 added to your holdings", "ORD " + o.id); }, 180);
+      setTimeout(() => { doneSheet("Order placed", nfmt(q) + " " + c.sym, "Held on " + network + " \u00B7 waiting for settlement", "ORD " + o.id); }, 180);
     };
   });
+}
+function settleSheet(orderId) {
+  const o = db().orders.filter(x => x.id === orderId)[0];
+  if (!o) return;
+  const link = explorerLink(o.network, "SAMPLE");
+  sheet('<h2>Settle ' + esc(o.id) + '<span class="sub">' + esc(o.userName) + ' \u00B7 ' + nfmt(o.amount) + ' ' + esc(o.coin) + '</span></h2>' +
+    '<div class="k"><span>Network</span><span>' + esc(o.network || "-") + '</span></div>' +
+    '<div class="k"><span>Destination</span><span>' + esc(shortAddr(o.address)) + '</span></div>' +
+    '<div class="k"><span>Held value</span><span>' + money(o.total) + '</span></div>' +
+    '<div class="tiny" style="margin-top:10px">Send the coins from your own wallet or exchange first, then paste the real transaction hash here. Never mark an order settled before the chain shows it.</div>' +
+    '<label>Transaction hash</label><input id="stx" placeholder="paste the txid you actually sent">' +
+    (link ? '<div class="tiny" style="margin-top:8px">The user will be able to open: ' + esc(link.replace("SAMPLE", "...")) + '</div>' : '<div class="tiny" style="margin-top:8px">No explorer is mapped for ' + esc(o.network) + ' - the hash will be stored as text.</div>') +
+    '<div style="height:14px"></div><button class="btn" id="stGo">Record as settled</button>', () => {
+    $("#stGo").onclick = () => {
+      const tx = $("#stx").value.trim();
+      if (tx.length < 20) { toast("Paste the real transaction hash", "bad"); return; }
+      const d = db();
+      const x = d.orders.filter(y => y.id === orderId)[0];
+      x.status = "settled"; x.tx = tx; x.settledAt = now();
+      const u = d.users[x.userId];
+      if (u) { u.holdings = u.holdings || {}; u.holdings[x.coin] = +((u.holdings[x.coin] || 0) + Number(x.amount)).toFixed(8); save(); }
+      save(); closeSheet(); toast("Settled and credited", "ok"); haptic("ok"); render();
+    };
+  });
+}
+
+function rateSheet(sym) {
+  const r = rateOf(sym);
+  sheet('<h2>Price for ' + esc(r.name) + '<span class="sub">' + esc(sym) + ' \u00B7 market ' + prc(r.market) + '</span></h2>' +
+    '<div class="seg">' +
+      '<button id="mMarket" class="' + (r.mode === "market" ? "on" : "") + '">Market</button>' +
+      '<button id="mSpread" class="' + (r.mode === "spread" ? "on" : "") + '">Spread</button>' +
+      '<button id="mFixed" class="' + (r.mode === "fixed" ? "on" : "") + '">Fixed</button>' +
+    '</div>' +
+    '<div id="rSpreadWrap" style="display:' + (r.mode === "spread" ? "block" : "none") + '">' +
+      '<label>Spread over market, percent (max \u00B1' + SPREAD_MAX + '%)</label>' +
+      '<input id="rSpread" inputmode="decimal" value="' + esc(r.spread) + '" placeholder="1.5">' +
+      '<div class="tiny" style="margin-top:6px">Negative means you sell below market. Only do that if you know why.</div></div>' +
+    '<div id="rFixedWrap" style="display:' + (r.mode === "fixed" ? "block" : "none") + '">' +
+      '<label>Fixed price in USD per 1 ' + esc(sym) + '</label>' +
+      '<input id="rFixed" inputmode="decimal" value="' + esc(r.fixed || "") + '" placeholder="0.00"></div>' +
+    '<div class="k" style="margin-top:14px"><span>Customer pays</span><span id="rPreview">' + prc(r.unit) + '</span></div>' +
+    '<div style="height:14px"></div><button class="btn" id="rGo">Save price</button>' +
+    '<div class="tiny" style="margin-top:10px">This is the price the buy screen quotes. It never changes what a coin is worth elsewhere - it only changes what you charge.</div>', () => {
+    let mode = r.mode;
+    const sw = $("#rSpread"), fw = $("#rFixed");
+    const preview = () => {
+      const s = Math.max(-SPREAD_MAX, Math.min(SPREAD_MAX, parseFloat(sw.value) || 0));
+      let unit = r.market;
+      if (mode === "spread") unit = r.market ? r.market * (1 + s / 100) : null;
+      if (mode === "fixed") unit = parseFloat(fw.value) || null;
+      $("#rPreview").textContent = prc(unit);
+    };
+    const pick = m => {
+      mode = m;
+      $("#mMarket").className = m === "market" ? "on" : "";
+      $("#mSpread").className = m === "spread" ? "on" : "";
+      $("#mFixed").className = m === "fixed" ? "on" : "";
+      $("#rSpreadWrap").style.display = m === "spread" ? "block" : "none";
+      $("#rFixedWrap").style.display = m === "fixed" ? "block" : "none";
+      preview();
+    };
+    $("#mMarket").onclick = () => pick("market");
+    $("#mSpread").onclick = () => pick("spread");
+    $("#mFixed").onclick = () => pick("fixed");
+    sw.oninput = preview; fw.oninput = preview;
+    $("#rGo").onclick = () => {
+      if (mode === "spread") {
+        const s = parseFloat(sw.value) || 0;
+        if (s < -SPREAD_MAX || s > SPREAD_MAX) { toast("Spread must be between -" + SPREAD_MAX + "% and +" + SPREAD_MAX + "%", "bad"); return; }
+      }
+      if (mode === "fixed" && (!(parseFloat(fw.value) > 0))) { toast("Enter a fixed price above zero", "bad"); return; }
+      setRate(sym, mode, sw.value, fw.value);
+      closeSheet(); toast("Price saved for " + sym, "ok"); haptic("ok"); render();
+    };
+  });
+}
+
+/* ---------- networks and explorers ---------- */
+const EXPLORERS = {
+  "Bitcoin": "https://mempool.space/tx/",
+  "ERC-20": "https://etherscan.io/tx/",
+  "TRC-20": "https://tronscan.org/#/transaction/",
+  "BEP-20": "https://bscscan.com/tx/",
+  "Polygon": "https://polygonscan.com/tx/",
+  "Avalanche": "https://snowtrace.io/tx/",
+  "Arbitrum": "https://arbiscan.io/tx/",
+  "Base": "https://basescan.org/tx/",
+  "Solana": "https://solscan.io/tx/",
+  "TON": "https://tonviewer.com/transaction/",
+  "Cosmos": "https://www.mintscan.io/cosmos/tx/",
+  "XRP": "https://xrpscan.com/tx/",
+  "Litecoin": "https://blockchair.com/litecoin/transaction/",
+  "Aptos": "https://aptoscan.com/transaction/",
+  "Sui": "https://suiscan.xyz/mainnet/tx/"
+};
+function networksFor(sym) {
+  const s = String(sym || "").toUpperCase();
+  if (s === "BTC") return ["Bitcoin"];
+  if (s === "LTC") return ["Litecoin"];
+  if (s === "ETH") return ["ERC-20"];
+  if (s === "SOL") return ["Solana"];
+  if (s === "TON") return ["TON"];
+  if (s === "XRP") return ["XRP"];
+  if (s === "ATOM") return ["Cosmos"];
+  if (s === "APT") return ["Aptos"];
+  if (s === "SUI") return ["Sui"];
+  if (s === "USDT" || s === "USDC") return ["TRC-20", "ERC-20", "BEP-20", "Polygon", "Avalanche", "Arbitrum", "Base"];
+  if (s === "DAI" || s === "LINK" || s === "AAVE" || s === "UNI" || s === "SHIB" || s === "PEPE" || s === "WBTC") return ["ERC-20", "BEP-20", "Polygon", "Arbitrum", "Base"];
+  if (s === "BNB") return ["BEP-20"];
+  if (s === "MATIC") return ["Polygon", "ERC-20"];
+  if (s === "AVAX") return ["Avalanche"];
+  if (s === "ARB") return ["Arbitrum"];
+  if (s === "OP") return ["Ethereum L2 (Optimism)"];
+  return ["ERC-20", "BEP-20", "Polygon", "TRC-20", "Solana", "Other"];
+}
+function explorerLink(net, tx) {
+  if (!tx) return "";
+  const base = EXPLORERS[String(net || "")] || "";
+  if (!base) return "";
+  return base + encodeURIComponent(String(tx));
+}
+function statusWord(o) {
+  if (o.status === "settled") return '<span style="color:#00e0a4">settled \u00B7 ' + esc(o.network || "chain") + '</span>';
+  if (o.status === "cancelled") return '<span style="color:#ff4d6d">cancelled</span>';
+  return '<span style="color:#ffb020">awaiting settlement</span>';
 }
 
 /* ---------- wallets ---------- */
@@ -910,20 +1133,32 @@ function viewProfile() {
       '<div class="mid"><div class="t">' + esc(c ? c.name : sym) + '</div><div class="s">' + prc(c ? c.price : null) + ' now</div></div>' +
       '<div class="r"><div class="v">' + nfmt(u.holdings[sym]) + '</div><div class="s">' + esc(sym) + '</div></div></div>';
   }).join("") : '<div class="empty">No tokens yet.</div>';
-  const ords = orders.length ? orders.map(o =>
-    '<div class="item"><div class="ico">' + esc(o.coin.slice(0, 3)) + '</div>' +
-    '<div class="mid"><div class="t">' + nfmt(o.amount) + ' ' + esc(o.coin) + '</div><div class="s">' + esc(o.id) + ' \u00B7 ' + ago(o.ts) + '</div></div>' +
-    '<div class="r"><div class="v">' + money(o.total) + '</div><span class="tag a" style="margin-top:3px;display:inline-block">verified</span></div></div>'
-  ).join("") : '<div class="empty">No orders yet.</div>';
+  const ords = orders.length ? orders.map(o => {
+    const link = o.status === "settled" ? explorerLink(o.network, o.tx) : "";
+    const badge = o.status === "settled" ? '<span class="tag a">settled</span>'
+      : o.status === "cancelled" ? '<span class="tag r">cancelled</span>'
+      : '<span class="tag p">pending</span>';
+    return '<div class="item" style="display:block">' +
+      '<div class="row"><div class="ico">' + esc(o.coin.slice(0, 3)) + '</div>' +
+      '<div class="mid"><div class="t">' + nfmt(o.amount) + ' ' + esc(o.coin) + '</div><div class="s">' + esc(o.id) + ' \u00B7 ' + ago(o.ts) + ' \u00B7 ' + esc(o.network || "-") + '</div></div>' +
+      '<div class="r"><div class="v">' + money(o.total) + '</div><div style="margin-top:3px">' + badge + '</div></div></div>' +
+      (o.status === "settled" && o.tx
+        ? '<div class="s" style="margin-top:8px;word-break:break-all">Tx: ' + esc(o.tx) + '</div>' +
+          (link ? '<div style="margin-top:6px"><a class="btn sm ghost" href="' + esc(link) + '" target="_blank" rel="noopener" style="text-decoration:none;display:inline-block">Check this transfer</a></div>'
+                : '<div class="tiny" style="margin-top:6px">No explorer mapped for ' + esc(o.network) + ' - paste the hash into one yourself.</div>')
+        : o.status === "cancelled" ? '<div class="tiny" style="margin-top:6px">Cancelled - the held amount was returned to your balance.</div>'
+        : '<div class="tiny" style="margin-top:6px">Amount is held. Nothing has moved on-chain yet, so there is no hash to check.</div>') +
+      '</div>';
+  }).join("") : '<div class="empty">No orders yet.</div>';
   return '<div class="card"><div class="row"><div class="ico big">' + esc((u.name || "U").slice(0, 2).toUpperCase()) + '</div>' +
     '<div style="flex:1"><div style="font-weight:750;font-size:16px">' + esc(u.name) + '</div><div class="tiny">' + esc(u.email) + '</div></div>' +
-    '<span class="tag a">verified</span></div><div style="height:10px"></div>' +
+    '<span class="tag a">member</span></div><div style="height:10px"></div>' +
     '<div class="k"><span>Deposit balance</span><span>' + money(u.balance) + '</span></div>' +
     '<div class="k"><span>Tokens held</span><span>' + hold.length + '</span></div>' +
     '<div class="k"><span>Total orders</span><span>' + orders.length + '</span></div>' +
     '<div class="k"><span>Telegram ID</span><span>' + (u.tgId ? esc(u.tgId) : "not linked") + '</span></div>' +
     '<div class="k"><span>Member since</span><span>' + new Date(u.created).toLocaleDateString() + '</span></div>' +
-    '<div class="k"><span>App build</span><span>b4-admin-gear</span></div></div>' +
+    '<div class="k"><span>App build</span><span>b6-rates-tiers</span></div></div>' +
     '<div class="card"><h2>Purchased tokens</h2>' + holdings + '</div>' +
     '<div class="card"><h2>Order history</h2>' + ords + '</div>' +
     '<div class="card"><button class="btn ghost" id="pAdmin">' + (adminOn() ? "Open admin panel" : "Admin panel") + '</button>' +
@@ -970,12 +1205,30 @@ function viewAdmin() {
   const pend = d.deposits.filter(x => x.status === "pending").length;
   const wpend = d.withdrawals.filter(x => x.status === "pending").length;
   const lpend = (d.wallets || []).filter(x => x.status === "pending").length;
-  const tabs = [["deposits", "Deposits " + pend], ["withdrawals", "Payouts " + wpend], ["wallets", "Wallets " + lpend], ["users", "Users"], ["methods", "Methods"], ["coins", "Coins"], ["messages", "Messages"], ["broadcast", "Broadcast"], ["settings", "Settings"]];
+  const opend = d.orders.filter(x => x.status === "pending").length;
+  const tabs = [["orders", "Orders " + opend], ["deposits", "Deposits " + pend], ["withdrawals", "Payouts " + wpend], ["wallets", "Wallets " + lpend], ["users", "Users"], ["methods", "Methods"], ["coins", "Coins"], ["rates", "Rates"], ["messages", "Messages"], ["broadcast", "Broadcast"], ["settings", "Settings"]];
   return '<div class="seg">' + tabs.map(t => '<button data-at="' + t[0] + '" class="' + (adminTab === t[0] ? "on" : "") + '">' + esc(t[1]) + '</button>').join("") + '</div>' +
     '<div id="adminPane">' + adminPane() + '</div>';
 }
 function adminPane() {
   const d = db();
+  if (adminTab === "orders") {
+    const list = d.orders.slice().sort((a, b) => b.ts - a.ts);
+    const rows = list.length ? list.map(x =>
+      '<div class="item"><div class="ico">' + esc((x.coin || "?").slice(0, 3)) + '</div>' +
+      '<div class="mid"><div class="t">' + esc(x.userName) + ' \u00B7 ' + nfmt(x.amount) + ' ' + esc(x.coin) + '</div>' +
+      '<div class="s">' + esc(x.network || "-") + ' \u00B7 ' + esc(shortAddr(x.address)) + ' \u00B7 ' + money(x.total) + '</div></div>' +
+      '<div class="r">' + (x.status === "pending"
+        ? '<button class="btn sm" data-settle="' + esc(x.id) + '">Settle</button> <button class="btn sm ghost" data-cancel="' + esc(x.id) + '">Cancel</button>'
+        : x.status === "settled"
+          ? '<span class="tag a">settled</span>'
+          : '<span class="tag r">cancelled</span>') +
+        (x.status === "settled" && x.tx ? '<div class="s" style="max-width:120px;word-break:break-all;margin-top:4px">' + esc(String(x.tx).slice(0, 22)) + '\u2026</div>' : '') +
+        '</div></div>'
+    ).join("") : '<div class="empty">No orders.</div>';
+    return '<div class="card"><h2>Orders to settle<span class="sub">' + list.length + ' total \u00B7 ' + list.filter(x => x.status === "pending").length + ' waiting</span></h2>' +
+      '<div class="tiny" style="margin-bottom:10px">Send the coins from your own wallet or exchange first, then record the hash. An order stays pending until you do - never mark one settled on a promise.</div>' + rows + '</div>';
+  }
   if (adminTab === "deposits") {
     const list = d.deposits.slice().sort((a, b) => b.ts - a.ts);
     const rows = list.length ? list.map(x =>
@@ -1054,6 +1307,30 @@ function adminPane() {
       '<div style="height:14px"></div><button class="btn" id="cAdd">Add coin</button></div>' +
       '<div class="card"><h2>Your coins</h2>' + rows + '</div>';
   }
+  if (adminTab === "rates") {
+    const top = coins().slice(0, 24).map(c => {
+      const r = rateOf(c.sym);
+      return '<div class="item"><div class="ico">' + esc(c.sym.slice(0, 3)) + '</div>' +
+        '<div class="mid"><div class="t">' + esc(c.name) + '</div><div class="s">market ' + prc(r.market) + ' \u00B7 desk ' + prc(r.unit) + '</div></div>' +
+        '<div class="r"><span class="tag ' + (r.mode === "market" ? "p" : "a") + '">' + esc(r.label) + '</span>' +
+        '<button class="btn sm ghost" data-rate="' + esc(c.sym) + '" style="margin-top:4px">Set price</button></div></div>';
+    }).join("");
+    const custom = Object.keys(d.rates || {}).filter(s => d.rates[s] && d.rates[s].mode !== "market");
+    return '<div class="card"><h2>Desk prices<span class="sub">What the user is charged, per coin</span></h2>' +
+      '<div class="tiny" style="margin-bottom:10px">Market follows the live feed. A spread moves your price off market by a percentage, capped at \u00B125%. A fixed price is whatever you type. A spread above about 5% is where a quote stops being competitive and starts being the only thing a customer reads, so keep it where you would defend it on the phone.</div>' +
+      top + '</div>' +
+      '<div class="card"><h2>Coins with a custom price<span class="sub">' + custom.length + ' set</span></h2>' +
+      (custom.length ? custom.map(s => {
+        const r = rateOf(s);
+        return '<div class="item"><div class="ico">' + esc(s.slice(0, 3)) + '</div>' +
+          '<div class="mid"><div class="t">' + esc(r.name) + '</div><div class="s">' + esc(r.label) + '</div></div>' +
+          '<div class="r"><button class="btn sm ghost" data-rate="' + esc(s) + '">Edit</button></div></div>';
+      }).join("") : '<div class="empty">Nothing overridden - every coin follows market.</div>') + '</div>' +
+      '<div class="card"><h2>Quick-buy tiers<span class="sub">The amounts offered on the buy screen, in USD</span></h2>' +
+      '<label>Comma separated</label><input id="tierIn" value="' + esc(tiers().join(", ")) + '">' +
+      '<div style="height:12px"></div><button class="btn" id="tierGo">Save tiers</button>' +
+      '<div class="tiny" style="margin-top:10px">Tiers are amounts a customer pays. The app then shows how much real coin that buys at your price.</div></div>';
+  }
   if (adminTab === "messages") {
     const ids = Object.keys(d.tickets);
     const rows = ids.length ? ids.map(id => {
@@ -1124,6 +1401,31 @@ function bindAdmin() {
       const u = d.users[x.userId];
       if (u) u.balance = +(u.balance + Number(x.amount)).toFixed(8);
       save(); toast("Rejected and refunded"); render();
+    };
+  });
+  $$("[data-settle]").forEach(b => {
+    b.onclick = () => { settleSheet(b.dataset.settle); };
+  });
+  $$("[data-rate]").forEach(b => {
+    b.onclick = () => { haptic(); rateSheet(b.dataset.rate); };
+  });
+  const tG = $("#tierGo");
+  if (tG) tG.onclick = () => {
+    const list = $("#tierIn").value.split(",").map(x => Number(String(x).trim())).filter(x => x > 0);
+    if (!list.length) { toast("Enter at least one amount", "bad"); return; }
+    if (list.length > 12) { toast("Keep it to 12 tiers or fewer", "bad"); return; }
+    setTiers(list);
+    toast("Tiers saved", "ok"); render();
+  };
+  $$("[data-cancel]").forEach(b => {
+    b.onclick = () => {
+      const d = db();
+      const x = d.orders.filter(y => y.id === b.dataset.cancel)[0];
+      if (!x) return;
+      x.status = "cancelled";
+      const u = d.users[x.userId];
+      if (u) u.balance = +(u.balance + Number(x.total)).toFixed(8);
+      save(); toast("Cancelled and refunded"); render();
     };
   });
   $$("[data-wok]").forEach(b => {
