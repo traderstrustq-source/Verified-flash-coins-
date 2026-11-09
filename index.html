@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#070a12">
+<meta name="theme-color" content="#0a0b06">
 <title>Flash Coin</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{
-  --bg:#070a12; --bg2:#0d1220; --card:rgba(255,255,255,.045);
-  --line:rgba(255,255,255,.09); --txt:#eaf0ff; --dim:#8b96b4;
-  --acc:#00e0a4; --acc2:#3aa0ff; --warn:#ffb020; --bad:#ff4d6d;
+  --bg:#0a0b06; --bg2:#14150c; --card:rgba(255,255,255,.05);
+  --line:rgba(255,214,102,.16); --txt:#fff8e6; --dim:#b3a887;
+  --acc:#f5c518; --acc2:#00c853; --warn:#ffd257; --bad:#ff4d6d;
+  --gold:#f5c518; --green:#00c853;
   --r:18px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
 body{
   background:
-    radial-gradient(900px 500px at 80% -10%,rgba(58,160,255,.16),transparent 60%),
-    radial-gradient(700px 500px at -10% 10%,rgba(0,224,164,.13),transparent 60%),
+    radial-gradient(900px 500px at 80% -10%,rgba(0,200,83,.14),transparent 60%),
+    radial-gradient(700px 500px at -10% 10%,rgba(245,197,24,.13),transparent 60%),
     var(--bg);
   color:var(--txt);
   font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -28,14 +29,14 @@ body{
 .head{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
   padding:14px 0 10px;background:linear-gradient(180deg,var(--bg) 60%,transparent);backdrop-filter:blur(6px)}
 .logo{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:18px;
-  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#04120d;font-weight:800;
-  box-shadow:0 6px 20px rgba(0,224,164,.35)}
+  background:linear-gradient(135deg,var(--acc),var(--acc2));color:#1b1503;font-weight:800;
+  box-shadow:0 6px 20px rgba(245,197,24,.35)}
 .brand{font-weight:750;letter-spacing:.2px}
 .brand small{display:block;font-weight:500;font-size:11px;color:var(--dim);letter-spacing:.4px}
 .spacer{flex:1}
 .pill{font-size:11px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);
   color:var(--dim);background:var(--card);white-space:nowrap}
-.pill.ok{color:var(--acc);border-color:rgba(0,224,164,.35);background:rgba(0,224,164,.08)}
+.pill.ok{color:var(--acc);border-color:rgba(245,197,24,.35);background:rgba(245,197,24,.08)}
 
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;
   margin-bottom:12px;backdrop-filter:blur(10px);animation:rise .35s ease both}
@@ -47,12 +48,12 @@ h2 .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top
 .tiny{font-size:11.5px;color:var(--dim);line-height:1.45}
 
 .balance{position:relative;overflow:hidden;border-radius:22px;padding:20px;
-  background:linear-gradient(150deg,rgba(0,224,164,.16),rgba(58,160,255,.14) 55%,rgba(255,255,255,.03));
+  background:linear-gradient(150deg,rgba(245,197,24,.20),rgba(0,200,83,.16) 55%,rgba(255,255,255,.03));
   border:1px solid rgba(255,255,255,.12);margin-bottom:12px;animation:rise .35s ease both}
 .balance:after{content:"";position:absolute;inset:-40% -20% auto auto;width:220px;height:220px;
-  background:radial-gradient(circle,rgba(0,224,164,.35),transparent 70%);filter:blur(20px);animation:float 7s ease-in-out infinite}
+  background:radial-gradient(circle,rgba(245,197,24,.35),transparent 70%);filter:blur(20px);animation:float 7s ease-in-out infinite}
 @keyframes float{50%{transform:translate(-18px,16px) scale(1.1)}}
-.balance .lbl{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:#b9c6e4}
+.balance .lbl{font-size:11.5px;letter-spacing:1.4px;text-transform:uppercase;color:#e8d9a0}
 .balance .amt{font-size:34px;font-weight:800;letter-spacing:-.5px;margin:6px 0 2px;font-variant-numeric:tabular-nums}
 
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
@@ -62,7 +63,7 @@ h2 .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top
 .qa i{display:block;font-size:19px;font-style:normal;margin-bottom:4px}
 
 .btn{display:block;width:100%;padding:14px;border-radius:14px;border:0;cursor:pointer;
-  font:inherit;font-weight:700;color:#04120d;background:linear-gradient(135deg,var(--acc),#4fe0c0);
+  font:inherit;font-weight:700;color:#1b1503;background:linear-gradient(135deg,var(--acc),var(--acc2));
   transition:transform .12s ease,filter .2s;position:relative;overflow:hidden}
 .btn:active{transform:scale(.975);filter:brightness(.94)}
 .btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--txt);font-weight:600}
@@ -74,7 +75,7 @@ h2 .sub{display:block;font-weight:400;font-size:12px;color:var(--dim);margin-top
 label{display:block;font-size:12px;color:var(--dim);margin:12px 0 6px;letter-spacing:.3px}
 input,select,textarea{width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--line);
   background:rgba(255,255,255,.04);color:var(--txt);font:inherit;outline:none;transition:border-color .2s,background .2s}
-input:focus,select:focus,textarea:focus{border-color:rgba(0,224,164,.55);background:rgba(0,224,164,.05)}
+input:focus,select:focus,textarea:focus{border-color:rgba(245,197,24,.55);background:rgba(245,197,24,.05)}
 textarea{resize:vertical;min-height:88px}
 select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
   background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;background-size:5px 5px;background-repeat:no-repeat}
@@ -93,12 +94,12 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 
 .tag{font-size:10.5px;padding:3px 8px;border-radius:999px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
 .tag.p{background:rgba(255,176,32,.14);color:var(--warn)}
-.tag.a{background:rgba(0,224,164,.14);color:var(--acc)}
+.tag.a{background:rgba(245,197,24,.14);color:var(--acc)}
 .tag.r{background:rgba(255,77,109,.14);color:var(--bad)}
 
 .ticker{overflow:hidden;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.03);margin-bottom:12px}
 .ticker .track{display:flex;gap:26px;padding:10px 14px;white-space:nowrap;width:max-content;
-  animation:slide 26s linear infinite;font-size:12px;color:#b9c6e4}
+  animation:slide 26s linear infinite;font-size:12px;color:#e8d9a0}
 @keyframes slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ticker b{color:var(--acc)}
 .empty{text-align:center;padding:24px 10px;color:var(--dim);font-size:13px}
@@ -113,7 +114,7 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   padding:8px 1px;border-radius:13px;cursor:pointer;transition:color .2s,background .25s,transform .12s}
 .tab i{display:block;font-size:17px;font-style:normal;margin-bottom:2px}
 .tab:active{transform:scale(.94)}
-.tab.on{color:#04120d;background:linear-gradient(135deg,var(--acc),#4fe0c0)}
+.tab.on{color:#1b1503;background:linear-gradient(135deg,var(--acc),var(--acc2))}
 
 .sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;
   background:rgba(3,6,12,.68);backdrop-filter:blur(4px);animation:fade .2s ease both}
@@ -128,12 +129,12 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
   background:#111a2c;border:1px solid var(--line);color:var(--txt);padding:11px 16px;border-radius:13px;
   font-size:13px;z-index:90;opacity:0;pointer-events:none;transition:.28s ease;max-width:88vw;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
-.toast.ok{border-color:rgba(0,224,164,.4)}
+.toast.ok{border-color:rgba(245,197,24,.4)}
 .toast.bad{border-color:rgba(255,77,109,.45)}
 
 .done{text-align:center;padding:6px 0 4px}
 .done svg{width:78px;height:78px;display:block;margin:0 auto 10px}
-.done .ring{fill:none;stroke:rgba(0,224,164,.22);stroke-width:4}
+.done .ring{fill:none;stroke:rgba(245,197,24,.22);stroke-width:4}
 .done .tick{fill:none;stroke:var(--acc);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
   stroke-dasharray:48;stroke-dashoffset:48;animation:draw .55s .15s ease forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
@@ -147,14 +148,14 @@ select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,va
 
 .chat{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding:6px 0}
 .msg{max-width:82%;padding:10px 13px;border-radius:15px;font-size:13.5px;line-height:1.45;animation:rise .25s ease both;word-break:break-word}
-.msg.u{align-self:flex-end;background:linear-gradient(135deg,rgba(0,224,164,.22),rgba(0,224,164,.12));
-  border:1px solid rgba(0,224,164,.28);border-bottom-right-radius:5px}
+.msg.u{align-self:flex-end;background:linear-gradient(135deg,rgba(245,197,24,.22),rgba(245,197,24,.12));
+  border:1px solid rgba(245,197,24,.28);border-bottom-right-radius:5px}
 .msg.a{align-self:flex-start;background:rgba(255,255,255,.06);border:1px solid var(--line);border-bottom-left-radius:5px}
 .msg .when{display:block;font-size:10px;color:var(--dim);margin-top:4px}
 
-.addr{display:flex;gap:8px;align-items:center;padding:12px;border-radius:13px;border:1px dashed rgba(0,224,164,.4);
-  background:rgba(0,224,164,.06);font-size:12.5px;word-break:break-all}
-.addr code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:1;font-size:12px;color:#c8ffe9}
+.addr{display:flex;gap:8px;align-items:center;padding:12px;border-radius:13px;border:1px dashed rgba(245,197,24,.4);
+  background:rgba(245,197,24,.06);font-size:12.5px;word-break:break-all}
+.addr code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;flex:1;font-size:12px;color:#ffe9a8}
 
 .k{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
 .k:last-child{border-bottom:0}
@@ -205,7 +206,7 @@ const ago = t => { const s = Math.floor((now() - t) / 1000); if (s < 60) return 
 const code = () => { const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 6; i++) s += a[Math.floor(Math.random() * a.length)]; return s; };
 
 const TG = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-function tgInit() { if (!TG) return; try { TG.ready(); TG.expand(); if (TG.setHeaderColor) TG.setHeaderColor("#070a12"); if (TG.setBackgroundColor) TG.setBackgroundColor("#070a12"); } catch (e) { } }
+function tgInit() { if (!TG) return; try { TG.ready(); TG.expand(); if (TG.setHeaderColor) TG.setHeaderColor("#0a0b06"); if (TG.setBackgroundColor) TG.setBackgroundColor("#0a0b06"); } catch (e) { } }
 function haptic(kind) { try { if (!TG || !TG.HapticFeedback) return; if (kind === "ok") { TG.HapticFeedback.notificationOccurred("success"); } else { TG.HapticFeedback.impactOccurred("light"); } } catch (e) { } }
 
 let toastT;
@@ -283,7 +284,7 @@ function blank() {
     users: {}, session: null, adminSession: false,
     coinsCache: null, customCoins: [],
     methods: [], orders: [], deposits: [], withdrawals: [], wallets: [],
-    rates: {}, tiers: [20, 50, 100, 200, 500, 1000],
+    rates: {}, tiers: [20, 50, 100, 200, 500, 1000], faq: [], autoReply: "",
     tickets: {}, settings: { adminPass: "", relayUrl: "", adminKey: "" }
   };
 }
@@ -504,7 +505,7 @@ function viewAuth() {
     '<div class="tiny" style="margin-top:12px;text-align:center">Your password is hashed on this device. We never ask for a seed phrase or private key.</div>' +
   '</div>' +
   '<div class="card tight" style="text-align:center">' +
-    '<div class="tiny">Platform operator? <a href="#" id="adminLink" style="color:#00e0a4;text-decoration:none;font-weight:650">Open admin panel</a></div>' +
+    '<div class="tiny">Platform operator? <a href="#" id="adminLink" style="color:var(--acc);text-decoration:none;font-weight:650">Open admin panel</a></div>' +
   '</div>';
 }
 function bindAuth() {
@@ -829,7 +830,7 @@ function explorerLink(net, tx) {
   return base + encodeURIComponent(String(tx));
 }
 function statusWord(o) {
-  if (o.status === "settled") return '<span style="color:#00e0a4">settled \u00B7 ' + esc(o.network || "chain") + '</span>';
+  if (o.status === "settled") return '<span style="color:var(--acc2)">settled \u00B7 ' + esc(o.network || "chain") + '</span>';
   if (o.status === "cancelled") return '<span style="color:#ff4d6d">cancelled</span>';
   return '<span style="color:#ffb020">awaiting settlement</span>';
 }
@@ -1020,6 +1021,11 @@ function msgUserSheet(id, tag) {
     $("#mwGo").onclick = async () => {
       const v = $("#mwText").value.trim();
       if (!v) { toast("Write a message", "bad"); return; }
+      if (dangerScan(v)) {
+        toast("Blocked: this asks for a recovery phrase or private key", "bad");
+        $("#mwText").value = "";
+        return;
+      }
       const dd = db();
       dd.tickets[id] = dd.tickets[id] || [];
       dd.tickets[id].push({ from: "admin", text: v, ts: now() });
@@ -1158,7 +1164,7 @@ function viewProfile() {
     '<div class="k"><span>Total orders</span><span>' + orders.length + '</span></div>' +
     '<div class="k"><span>Telegram ID</span><span>' + (u.tgId ? esc(u.tgId) : "not linked") + '</span></div>' +
     '<div class="k"><span>Member since</span><span>' + new Date(u.created).toLocaleDateString() + '</span></div>' +
-    '<div class="k"><span>App build</span><span>b6-rates-tiers</span></div></div>' +
+    '<div class="k"><span>App build</span><span>b8-plain-support</span></div></div>' +
     '<div class="card"><h2>Purchased tokens</h2>' + holdings + '</div>' +
     '<div class="card"><h2>Order history</h2>' + ords + '</div>' +
     '<div class="card"><button class="btn ghost" id="pAdmin">' + (adminOn() ? "Open admin panel" : "Admin panel") + '</button>' +
@@ -1169,16 +1175,66 @@ function bindProfile() {
   $("#pAdmin").onclick = () => { if (adminOn()) { route = "admin"; render(); } else { askAdminPass(); } };
 }
 
-/* ---------- support ---------- */
+/* ---------- support: safety scan, FAQ and offline auto-reply ---------- */
+/* Matches a message that ASKS for a secret, not one that merely warns about it.
+   A warning ("we never ask for your seed phrase") must stay savable; a request
+   ("please write 12 phrase password") must never leave the platform. */
+const DANGER_REQUEST = [
+  /\b(?:write|send|share|enter|type|paste|provide|give|submit|upload|attach|reply|put|confirm|fill)\b[^.!?\n]{0,20}\b(?:seed|recovery|mnemonic|private key|secret phrase|phrase password|wallet password|account password)\b/i,
+  /\b(?:12|twelve)\s*(?:word|phrase)\b[^.!?\n]{0,20}\b(?:send|write|share|enter|paste|provide|give|submit|password|code)\b/i,
+  /\b(?:your|the)\s+(?:seed|recovery|mnemonic)\s+phrase\b[^.!?\n]{0,12}\b(?:to us|here|now|please)\b/i,
+  /\b(?:12|twelve)\s*phrase\b/i,
+  /\bphrase\s*password\b/i,
+  /\b(?:write|send|share|enter|type|paste|provide|give|submit|upload)\b[^.!?\n]{0,20}\bapi\s*secret\b/i
+];
+function dangerScan(text) {
+  const t = String(text || "");
+  for (let i = 0; i < DANGER_REQUEST.length; i++) if (DANGER_REQUEST[i].test(t)) return true;
+  return false;
+}
+const DEFAULT_AUTO = "Thanks for writing. The operator is away right now, so this reply came from the automated desk. The questions below cover almost everything and work any hour. Your message is queued and you will get a personal answer here and on Telegram.";
+const DEFAULT_FAQ = [
+  { k: "deposit,deposite,credit,fund,add money", q: "How do I deposit?",
+    a: "Open Deposit, pick a method, send the exact amount to the address shown, then submit the transaction hash. Nothing is credited until the operator confirms your transaction on-chain. You can watch the status in the same tab." },
+  { k: "withdraw,payout,cash out,send to wallet", q: "How do I withdraw?",
+    a: "Open Withdraw, choose the network, enter the amount and your receiving address. The address is the only thing needed. A withdrawal stays pending until the operator sends it, and the held amount is refunded if it is rejected." },
+  { k: "wallet,connect,link,trust wallet,metamask,binance", q: "How do I connect a wallet?",
+    a: "Open Wallets and pick your wallet. Connecting needs your public address, or a signature you approve inside your own wallet app. Nobody on this platform will ever ask you for a 12-word recovery phrase, a private key or an API secret - a public address cannot move funds, a seed phrase can." },
+  { k: "phrase,seed,12,key,code,verification", q: "Someone asked me for my seed phrase",
+    a: "Do not send it. A 12-word recovery phrase is the private key of your wallet: whoever reads it can move every coin in it, instantly and irreversibly. No support agent, verification step or connection process needs it. Report the message here and change nothing until you have checked it." },
+  { k: "order,status,pending,settled,history,track", q: "Where is my order?",
+    a: "Profile shows every order. Pending means the value is held and nothing has moved on-chain yet. Settled means a transaction hash was recorded and you can open it on the block explorer from the same row." },
+  { k: "price,cost,rate,how much,value", q: "How is the price set?",
+    a: "Each coin is quoted at the desk price shown on the buy screen, which follows the live market or the operator's own rate. That quote is what you pay, and the amount of coin you receive is shown before you confirm." },
+  { k: "network,wrong chain,trc,erc,bep,recover stuck", q: "I sent on the wrong network",
+    a: "Tokens sent on a chain that does not carry them are usually unrecoverable, so check the network label before sending. If it already happened, message support with the transaction hash and the operator will look at it and tell you honestly whether anything can be done." },
+  { k: "verify,verified,kyc,id,document,passport", q: "Do I need verification?",
+    a: "Linking a wallet needs an address and, where you choose it, a signature that proves you hold it. That is the whole check. No document upload and no seed phrase is ever part of connecting a wallet here." }
+];
+function faqList() { const l = db().faq; return (l && l.length) ? l : DEFAULT_FAQ; }
+function autoText() { const a = db().autoReply; return (a && String(a).trim()) ? String(a) : DEFAULT_AUTO; }
+function matchFaq(text) {
+  const t = String(text || "").toLowerCase();
+  let best = null, bestScore = 0;
+  faqList().forEach(item => {
+    let score = 0;
+    String(item.k || "").toLowerCase().split(",").forEach(w => {
+      w = w.trim();
+      if (w && t.indexOf(w) > -1 && w.length > bestScore) { bestScore = w.length; best = item; }
+    });
+  });
+  return bestScore >= 4 ? best : null;
+}
 function viewSupport() {
   const u = me();
   const t = db().tickets[u.id] || [];
   const msgs = t.length ? t.map(m =>
-    '<div class="msg ' + (m.from === "user" ? "u" : "a") + '">' + esc(m.text) + '<span class="when">' + ago(m.ts) + '</span></div>'
-  ).join("") : '<div class="empty"><span class="e">\uD83D\uDCAC</span>No messages yet. Ask anything about your order or deposit.</div>';
-  return '<div class="card"><h2>Support<span class="sub">Messages reach the operator on Telegram. Replies arrive here and in your bot chat.</span></h2>' +
+    '<div class="msg ' + (m.from === "user" ? "u" : "a") + '">' + esc(m.text) +
+    '<span class="when">' + ago(m.ts) + '</span></div>'
+  ).join("") : '<div class="empty"><span class="e">\uD83D\uDCAC</span>No messages yet. Write below and it goes to the operator.</div>';
+  return '<div class="card"><h2>Support<span class="sub">Chat with the operator</span></h2>' +
     '<div class="chat" id="chatBox">' + msgs + '</div>' +
-    '<label>Your message</label><textarea id="sText" placeholder="Type your message..."></textarea>' +
+    '<label>Message</label><textarea id="sText" placeholder="Type a message"></textarea>' +
     '<div style="height:12px"></div><button class="btn" id="sGo">Send</button></div>';
 }
 function bindSupport() {
@@ -1193,9 +1249,36 @@ function bindSupport() {
     d.tickets[u.id].push({ from: "user", text: v, ts: now() });
     save();
     const r = await relay({ action: "notify_admin", text: "\uD83D\uDCAC Support \u00B7 " + u.name + " (" + (u.tgId || u.email) + ")\n\n" + v });
-    if (!r.ok) { toast("Saved here. Relay not connected yet.", "bad"); } else { toast("Sent to support", "ok"); }
+    if (!r.ok) { toast("Sent. Relay not connected yet, so the operator sees it when it is.", "bad"); } else { toast("Sent", "ok"); }
     render();
   };
+}
+
+function faqSheet(index) {
+  const d = db();
+  if (!d.faq || !d.faq.length) d.faq = DEFAULT_FAQ.map(f => ({ k: f.k, q: f.q, a: f.a }));
+  const editing = index >= 0 ? d.faq[index] : null;
+  sheet('<h2>' + (editing ? "Edit question" : "New question") + '<span class="sub">Shown as a button in Support and answered instantly</span></h2>' +
+    '<label>Question text (the button label)</label><input id="fqQ" value="' + esc(editing ? editing.q : "") + '" placeholder="How do I withdraw?">' +
+    '<label>Trigger words, comma separated</label><input id="fqK" value="' + esc(editing ? editing.k : "") + '" placeholder="withdraw,payout,cash out">' +
+    '<div class="tiny" style="margin-top:6px">A customer message is matched on these words. Use the words people actually type, including common misspellings.</div>' +
+    '<label>Answer</label><textarea id="fqA" placeholder="The full answer the customer receives">' + esc(editing ? editing.a : "") + '</textarea>' +
+    '<div style="height:14px"></div><button class="btn" id="fqGo">Save question</button>' +
+    '<div class="tiny" style="margin-top:10px">An answer that asks for a recovery phrase, seed phrase, private key or API secret cannot be saved - no support process needs those.</div>', () => {
+    $("#fqGo").onclick = () => {
+      const q = $("#fqQ").value.trim();
+      const k = $("#fqK").value.trim();
+      const a = $("#fqA").value.trim();
+      if (q.length < 4) { toast("Write the question", "bad"); return; }
+      if (!k) { toast("Add at least one trigger word", "bad"); return; }
+      if (a.length < 10) { toast("Write the answer", "bad"); return; }
+      if (dangerScan(a)) { toast("Blocked: this asks for a recovery phrase or private key", "bad"); return; }
+      const dd = db();
+      if (index >= 0) { dd.faq[index] = { k: k, q: q, a: a }; }
+      else { dd.faq.push({ k: k, q: q, a: a }); }
+      save(); closeSheet(); toast("Question saved", "ok"); haptic("ok"); render();
+    };
+  });
 }
 
 /* ---------- admin ---------- */
@@ -1331,6 +1414,24 @@ function adminPane() {
       '<div style="height:12px"></div><button class="btn" id="tierGo">Save tiers</button>' +
       '<div class="tiny" style="margin-top:10px">Tiers are amounts a customer pays. The app then shows how much real coin that buys at your price.</div></div>';
   }
+  if (adminTab === "auto") {
+    const list = faqList();
+    const rows = list.map((f, i) =>
+      '<div class="item"><div class="ico">?</div>' +
+      '<div class="mid"><div class="t">' + esc(f.q) + '</div><div class="s">' + esc(String(f.a).slice(0, 54)) + '\u2026</div></div>' +
+      '<div class="r"><button class="btn sm ghost" data-fedit="' + i + '">Edit</button>' +
+      (d.faq && d.faq.length ? ' <button class="btn sm ghost" data-fdel="' + i + '">Del</button>' : '') + '</div></div>'
+    ).join("");
+    return '<div class="card"><h2>Offline auto reply<span class="sub">Sent the moment a customer writes, until you answer</span></h2>' +
+      '<textarea id="arText" placeholder="Your away message">' + esc(autoText()) + '</textarea>' +
+      '<div style="height:12px"></div><button class="btn" id="arSave">Save auto reply</button>' +
+      '<div class="tiny" style="margin-top:10px">If the message matches one of the questions below, that answer is sent instead - this text is the fallback.</div></div>' +
+      '<div class="card"><h2>Quick questions<span class="sub">' + list.length + ' shown as buttons in Support</span></h2>' + rows +
+      '<div style="height:12px"></div><button class="btn ghost" id="fAdd">Add a question</button>' +
+      (d.faq && d.faq.length ? ' <button class="btn ghost" id="fReset" style="margin-top:8px">Restore the default set</button>' : '') + '</div>' +
+      '<div class="card"><h2>What support must never be asked for</h2>' +
+      '<div class="tiny">Outbound messages are scanned and blocked when they request a 12-word recovery phrase, a seed phrase, a private key, a mnemonic or an API secret. That is not a setting you can turn off: those details are the wallet itself, and a message asking for one is a message asking to empty it. Ask for an address, or a signature the user approves in their own app.</div></div>';
+  }
   if (adminTab === "messages") {
     const ids = Object.keys(d.tickets);
     const rows = ids.length ? ids.map(id => {
@@ -1417,6 +1518,25 @@ function bindAdmin() {
     setTiers(list);
     toast("Tiers saved", "ok"); render();
   };
+  const arS = $("#arSave");
+  if (arS) arS.onclick = () => {
+    const v = $("#arText").value.trim();
+    if (v.length < 10) { toast("Write a fuller away message", "bad"); return; }
+    if (dangerScan(v)) { toast("Blocked: this asks for a recovery phrase or private key", "bad"); return; }
+    db().autoReply = v; save(); toast("Auto reply saved", "ok"); haptic("ok"); render();
+  };
+  const fA = $("#fAdd");
+  if (fA) fA.onclick = () => faqSheet(-1);
+  $$("[data-fedit]").forEach(b => { b.onclick = () => faqSheet(Number(b.dataset.fedit)); });
+  $$("[data-fdel]").forEach(b => {
+    b.onclick = () => {
+      const d = db();
+      d.faq = (d.faq || []).filter((x, i) => i !== Number(b.dataset.fdel));
+      save(); toast("Question removed"); render();
+    };
+  });
+  const fR = $("#fReset");
+  if (fR) fR.onclick = () => { db().faq = []; save(); toast("Default questions restored", "ok"); render(); };
   $$("[data-cancel]").forEach(b => {
     b.onclick = () => {
       const d = db();
@@ -1520,6 +1640,10 @@ function bindAdmin() {
         $("#rpGo").onclick = async () => {
           const v = $("#rpText").value.trim();
           if (!v) { toast("Write a reply", "bad"); return; }
+          if (dangerScan(v)) {
+            toast("Blocked: never request a seed phrase or private key", "bad");
+            return;
+          }
           const d = db();
           d.tickets[id] = d.tickets[id] || [];
           d.tickets[id].push({ from: "admin", text: v, ts: now() });
@@ -1535,6 +1659,7 @@ function bindAdmin() {
   if (bc) bc.onclick = async () => {
     const v = $("#bcText").value.trim();
     if (!v) { toast("Write the announcement", "bad"); return; }
+    if (dangerScan(v)) { toast("Blocked: a broadcast must never ask for a recovery phrase or private key", "bad"); return; }
     bc.disabled = true; bc.textContent = "Sending...";
     const r = await relay({ action: "broadcast", text: v });
     bc.disabled = false; bc.textContent = "Send to everyone";
